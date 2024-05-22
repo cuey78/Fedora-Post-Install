@@ -158,7 +158,7 @@ option8() {
     # Install Virtualization
     if [ -a /sbin/vfio-pci-override-vga.sh ]
 	then 
-	    echo "Looks like Virtualization has been Installed Please Uninstall First and then ReInstall."
+	    echo "Looks like Virtualization has been Installed Please Uninstall First and then ReInstall."iv
     fi
     clear
     function show_menu() {
@@ -427,10 +427,30 @@ for file in $sh_files; do
     echo "Marked $file as executable."
 done
 if [[ -f "looking-glass-B6.tar.gz" ]]; then echo "File exists"; 
-else echo "====================================================="
-     echo "| Can't find looking-glass-B6.tar.gz Download First |"
-     echo "|         from looking-glass.io                     |"
-     echo "====================================================="
+else 
+    url1="https://looking-glass.io/artifact/stable/source"
+    USER1=$(logname)
+
+    # Open the URL in the default web browser as the normal user
+    runuser -u $USER1 -- xdg-open "$url1" &> /dev/null
+    # Define the browser process name
+    BROWSER_PROCESS="firefox"  # or "chrome", "chromium", etc.
+    # Close the browser as the normal user
+    runuser -u $USER1 -- pkill $BROWSER_PROCESS
+    # Define the filename to check
+    filename="looking-glass-B6.tar.gz"
+
+    # Check if the file exists in the Downloads directory
+    if [ -f "/home/"$USER1"/Downloads/$filename" ]; then
+        echo "$filename found in Downloads directory."
+        echo "Moving $filename to the current directory..."
+        mv "/home/"$USER1"/Downloads/$filename" .
+        echo "$filename moved successfully."
+        
+else
+    echo "$filename not found in Downloads directory."
+fi
+
 exit 1
 fi
 }
