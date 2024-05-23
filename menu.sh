@@ -359,40 +359,80 @@ option9() {
 }
 
 option10() {
-    #Fix Fedora Grub Boot Screen
-    GRUB_FILE="/etc/default/grub"
-    SEARCH_LINE='GRUB_TERMINAL_OUTPUT="console"'
-    COMMENTED_LINE='#GRUB_TERMINAL_OUTPUT="console"'
-    THEME_LINE='GRUB_THEME="/boot/grub2/theme/fedora/theme.txt"'
+    while true; do
+        # Clear the screen for better readability
+        clear
+        echo "==============================="
+        echo "|    Fedora Theme Fix         |"
+        echo "|                             |"
+        echo "==============================="
+        # Display menu options
+        echo "Please choose an option:"
+        echo "1. Fix Fedora grub boot screen"
+        echo "2. Option 2"
+        echo "b. Back"
+        echo
 
-    # Check if the GRUB file exists
-    if [[ ! -f "$GRUB_FILE" ]]; then
-        echo "Error: $GRUB_FILE does not exist."
-    exit 1
-    fi
+        # Read user input
+        read -p "Enter your choice: " choice
 
-    # Use sed to comment out the search line and add the theme line
-    if grep -q "^$SEARCH_LINE" "$GRUB_FILE"; then
-    # Create a backup of the original file
-        cp "$GRUB_FILE" "${GRUB_FILE}.bak"
+    case $choice in
+        1)
+             #Fix Fedora Grub Boot Screen
+        GRUB_FILE="/etc/default/grub"
+        SEARCH_LINE='GRUB_TERMINAL_OUTPUT="console"'
+        COMMENTED_LINE='#GRUB_TERMINAL_OUTPUT="console"'
+        THEME_LINE='GRUB_THEME="/boot/grub2/theme/fedora/theme.txt"'
+
+        # Check if the GRUB file exists
+        if [[ ! -f "$GRUB_FILE" ]]; then
+            echo "Error: $GRUB_FILE does not exist."
+            exit 1
+        fi
+
+        # Use sed to comment out the search line and add the theme line
+        if grep -q "^$SEARCH_LINE" "$GRUB_FILE"; then
+        # Create a backup of the original file
+            cp "$GRUB_FILE" "${GRUB_FILE}.bak"
     
-    # Use sed to perform the required changes
-        sed -i "s|^$SEARCH_LINE|$COMMENTED_LINE\n$THEME_LINE|" "$GRUB_FILE"
-        echo "Updated $GRUB_FILE successfully."
-    else
-        echo "Line $SEARCH_LINE not found in $GRUB_FILE."
-    fi
-    # Source and destination directories
-    SOURCE_DIR="theme"
-    DEST_DIR="/boot/grub2/theme"
-        su -c "mkdir /boot/grub2/theme" root
-        sleep 10
+        # Use sed to perform the required changes
+            sed -i "s|^$SEARCH_LINE|$COMMENTED_LINE\n$THEME_LINE|" "$GRUB_FILE"
+            echo "Updated $GRUB_FILE successfully."
+        else
+            echo "Line $SEARCH_LINE not found in $GRUB_FILE."
+        fi
+        # Source and destination directories
+        SOURCE_DIR="theme"
+        DEST_DIR="/boot/grub2/theme"
+            su -c "mkdir /boot/grub2/theme" root
+            sleep 10
         #Copy the directory and all its contents
-        su -c "cp -r "$SOURCE_DIR"/* "$DEST_DIR"" root
-        echo "Directory $SOURCE_DIR copied to $DEST_DIR successfully."
-        sleep 10
-        grub2-mkconfig -o /boot/grub2/grub.cfg
-        grub2-mkconfig -o /boot/efi/EFI/fedora/grub.cfg
+            su -c "cp -r "$SOURCE_DIR"/* "$DEST_DIR"" root
+            echo "Directory $SOURCE_DIR copied to $DEST_DIR successfully."
+            sleep 5
+            grub2-mkconfig -o /boot/grub2/grub.cfg
+            grub2-mkconfig -o /boot/efi/EFI/fedora/grub.cfg
+            ;;
+
+        2)
+            # Option 2: Placeholder
+            echo "You chose Option 2."
+            read -p "Press Enter to continue..."
+            ;;
+
+        b|B)
+            # Back option: exit the loop
+            echo "Going back..."
+            break
+            ;;
+
+        *)
+            # Invalid option
+            echo "Invalid choice. Please try again."
+            read -p "Press Enter to continue..."
+            ;;
+    esac
+done  
         
 }
 
@@ -413,7 +453,7 @@ display_menu() {
     echo "7. Install Google Chrome"
     echo "8. Install Virtualization"
     echo "9. Enable Thinkpad Wifi NFS Shares"
-    echo "10. Fix Fedora Grub Boot Screen"
+    echo "10. Fedora Theme Fixs"
     echo "Q. Quit"
 }
 
