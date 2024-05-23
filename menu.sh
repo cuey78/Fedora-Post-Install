@@ -416,43 +416,42 @@ display_menu() {
     echo "10. Fix Fedora Grub Boot Screen"
     echo "Q. Quit"
 }
+
 #mark scripts as executable
 execsh() {
-# Find all .sh files in the current directory
-sh_files=$(find . -maxdepth 1 -type f -name "*.sh")
+    # Find all .sh files in the current directory
+    sh_files=$(find . -maxdepth 1 -type f -name "*.sh")
 
-# Loop through each .sh file and mark it as executable
-for file in $sh_files; do
-    chmod +x "$file"
-    echo "Marked $file as executable."
-done
-if [[ -f "looking-glass-B6.tar.gz" ]]; then echo "File exists"; 
-else 
-    url1="https://looking-glass.io/artifact/stable/source"
-    USER1=$(logname)
+    # Loop through each .sh file and mark it as executable
+    for file in $sh_files; do
+        chmod +x "$file"
+        echo "Marked $file as executable."
+    done
+}
 
-    # Open the URL in the default web browser as the normal user
-    runuser -u $USER1 -- xdg-open "$url1" &> /dev/null
-    # Define the browser process name
-    BROWSER_PROCESS="firefox"  # or "chrome", "chromium", etc.
-    # Close the browser as the normal user
-    runuser -u $USER1 -- pkill $BROWSER_PROCESS
-    # Define the filename to check
-    filename="looking-glass-B6.tar.gz"
+#Downloads looking-glass tar file
+download() {
+    if [[ -f "looking-glass-B6.tar.gz" ]]; then echo "File exists"; 
+    else 
+        url1="https://looking-glass.io/artifact/stable/source"
+        USER1=$(logname)
 
-    # Check if the file exists in the Downloads directory
-    if [ -f "/home/"$USER1"/Downloads/$filename" ]; then
-        echo "$filename found in Downloads directory."
-        echo "Moving $filename to the current directory..."
-        mv "/home/"$USER1"/Downloads/$filename" .
-        echo "$filename moved successfully."
-        
-else
-    echo "$filename not found in Downloads directory."
-fi
+        # Open the URL in the default web browser as the normal user
+        runuser -u $USER1 -- xdg-open "$url1" &> /dev/null &&
+   
+        filename="looking-glass-B6.tar.gz"
 
-exit 1
-fi
+        # Check if the file exists in the Downloads directory
+        if [ -f "/home/"$USER1"/Downloads/$filename" ]; then
+            echo "$filename found in Downloads directory."
+            echo "Moving $filename to the current directory..."
+            mv "/home/"$USER1"/Downloads/$filename" .
+            echo "$filename moved successfully."
+        else
+            echo "$filename not found in Downloads directory."
+        fi
+    fi
+   
 }
 
 # Main function
@@ -477,7 +476,14 @@ main() {
     done
 }
 
-# Call the main function
+#sets scripts in current Dir to execute 
 execsh
-sleep 1
+
+#checks for looking-glass tar file in current dir if not downloads it
+download
+
+#waits for 5sec
+sleep 5
+
+#calls main Fuction
 main
