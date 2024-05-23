@@ -391,7 +391,7 @@ option9() {
     sleep 2
     #install Service
     cp nfs-start.service /etc/systemd/system/
-    cp nfs1.sh /bin/
+    cp nfs1.sh /usr/bin/
     systemctl enable nfs-start.service
     systemctl start nfs-start.service
 }

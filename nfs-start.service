@@ -5,7 +5,7 @@ After=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/bin/nfs1.sh
+ExecStart=/usr/bin/nfs1.sh
 User=root
 #Group=your_groupname
 
