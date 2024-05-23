@@ -336,22 +336,60 @@ echo "Exited the menu."
 }
 
 option9() {
+    
+    clear #clear screen
     echo "Enable Thinkpad Wifi NFS Shares"
-    if [ ! -d "/mnt/jellyfin" ]; then
-        echo "Folder /mnt/jellyfin does not exist. Creating..."
-        mkdir -p /mnt/jellyfin
-        echo "Folder /mnt/jellyfin created."
-    else
-        echo "Folder /mnt/jellyfin already exists."
+    # Function to update the nfs1.sh script
+   # Ask for Wi-Fi SSID
+    #read -p "Enter the Wi-Fi SSID: " WIFI_SSID
+    # List available Wi-Fi networks and let the user select one
+    echo "Scanning for available Wi-Fi networks..."
+    AVAILABLE_SSIDS=$(nmcli -t -f SSID dev wifi | sort -u)
+
+    if [ -z "$AVAILABLE_SSIDS" ]; then
+        echo "No Wi-Fi networks found. Exiting..."
+        exit 1
     fi
 
-    if [ ! -d "/mnt/General" ]; then
-        echo "Folder /mnt/General does not exist. Creating..."
-        mkdir -p /mnt/General
-        echo "Folder /mnt/General created."
-    else
-        echo "Folder /mnt/General already exists."
-    fi
+    echo "Available Wi-Fi networks:"
+    IFS=$'\n'
+    select SSID in $AVAILABLE_SSIDS; do
+        if [ -n "$SSID" ]; then
+            WIFI_SSID="$SSID"
+            break
+        else
+            echo "Invalid selection. Please try again."
+        fi
+    done
+    unset IFS
+
+    echo "Selected Wi-Fi SSID: $WIFI_SSID"
+    
+    # Ask for remote shares
+    read -p "Enter the first remote share (e.g., 10.0.0.10:/mnt/data/General): " REMOTESHARE_1
+    read -p "Enter the second remote share (e.g., 10.0.0.10:/mnt/data/Plex): " REMOTESHARE_2
+
+    # Ask for local mount points
+    read -p "Enter the first local mount point (e.g., /mnt/General): " LOCALMOUNT1
+    read -p "Enter the second local mount point (e.g., /mnt/jellyfin): " LOCALMOUNT2
+
+    # Create local mount points if they do not exist
+    [ ! -d "$LOCALMOUNT1" ] && mkdir -p "$LOCALMOUNT1"
+    [ ! -d "$LOCALMOUNT2" ] && mkdir -p "$LOCALMOUNT2"
+
+    # Path to the nfs1.sh script
+    NFS_SCRIPT="nfs1.sh"
+
+    # Use sed to update the nfs1.sh script with the new values
+    sed -i "s/^WIFI_SSID=.*/WIFI_SSID=\"$WIFI_SSID\"/" $NFS_SCRIPT
+    sed -i "s|^REMOTESHARE_1=.*|REMOTESHARE_1=\"$REMOTESHARE_1\"|" $NFS_SCRIPT
+    sed -i "s|^REMOTESHARE_2=.*|REMOTESHARE_2=\"$REMOTESHARE_2\"|" $NFS_SCRIPT
+    sed -i "s|^LOCALMOUNT1=.*|LOCALMOUNT1=\"$LOCALMOUNT1\"|" $NFS_SCRIPT
+    sed -i "s|^LOCALMOUNT2=.*|LOCALMOUNT2=\"$LOCALMOUNT2\"|" $NFS_SCRIPT
+    #Inform User Changes made
+    echo "The nfs1.sh script has been updated successfully."
+    sleep 2
+    #install Service
     cp nfs-start.service /etc/systemd/system/
     cp nfs1.sh /bin/
     systemctl enable nfs-start.service
