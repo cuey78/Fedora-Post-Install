@@ -369,7 +369,7 @@ option10() {
         # Display menu options
         echo "Please choose an option:"
         echo "1. Fix Fedora grub boot screen"
-        echo "2. Option 2"
+        echo "2. Fix Fedora Default KDE Splash"
         echo "b. Back"
         echo
 
@@ -415,9 +415,45 @@ option10() {
             ;;
 
         2)
-            # Option 2: Placeholder
-            echo "You chose Option 2."
-            read -p "Press Enter to continue..."
+            USER2=$(logname)
+            TAR_FILE="FedoraMinimal.tar.gz"
+            SOURCE_DIR="FedoraMinimal"
+            DEST_DIR="/home/$USER2/.local/share/plasma/look-and-feel/$SOURCE_DIR"
+
+            # Extract the tar.gz file
+            echo "Extracting $TAR_FILE..."
+            tar -xzf "$TAR_FILE" 2>/dev/null
+            if [ $? -ne 0 ]; then
+                echo "Error extracting $TAR_FILE."
+                exit 1
+            fi
+
+            # Ensure the source directory was extracted
+            if [ ! -d "$SOURCE_DIR" ]; then
+                echo "Source directory $SOURCE_DIR not found after extraction."
+                exit 1
+            fi
+
+            # Create the destination directory
+            echo "Creating destination directory $DEST_DIR..."
+            runuser -u "$USER2" -- mkdir -p "$DEST_DIR"
+            if [ $? -ne 0 ]; then
+                echo "Error creating destination directory $DEST_DIR."
+                exit 1
+            fi
+
+            # Copy the files
+            echo "Copying files from $SOURCE_DIR to $DEST_DIR..."
+            runuser -u "$USER2" -- cp -r "$SOURCE_DIR"/* "$DEST_DIR"
+            if [ $? -ne 0 ]; then
+                echo "Error copying files to $DEST_DIR."
+                exit 1
+            fi
+
+            echo "Files copied from $SOURCE_DIR to $DEST_DIR successfully."
+
+            # Pause to give user time to read the final message
+            sleep 5
             ;;
 
         b|B)
