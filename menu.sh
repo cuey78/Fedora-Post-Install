@@ -625,7 +625,7 @@ execsh() {
 
     # Loop through each .sh file and mark it as executable
     for file in $sh_files; do
-        chmod +x "$file" &> /dev/null
+        chmod +x "$file" 
         echo "Marked $file as executable."
     done
 }
