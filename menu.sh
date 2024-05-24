@@ -336,64 +336,142 @@ echo "Exited the menu."
 }
 
 option9() {
+  while true; do
+    # Clear the screen for better readability
+    clear
+
+    # Display menu options
+    echo "Please choose an option:"
+    echo "1. WIFI NFS Shares"
+    echo "2. NFS Shares Via FSTAB ( WIRED ONLY )"
+    echo "b. Back"
+    echo
+
+    # Read user input
+    read -p "Enter your choice: " choice
+
+    case $choice in
+        1)
+            clear #clear screen
+            echo "Enable Wifi NFS Shares"
+            # Function to update the nfs1.sh script
+            # Ask for Wi-Fi SSID
+            #read -p "Enter the Wi-Fi SSID: " WIFI_SSID
+            # List available Wi-Fi networks and let the user select one
+            echo "Scanning for available Wi-Fi networks..."
+            AVAILABLE_SSIDS=$(nmcli -t -f SSID dev wifi | sort -u)
+
+            if [ -z "$AVAILABLE_SSIDS" ]; then
+                echo "No Wi-Fi networks found. Exiting..."
+                exit 1
+            fi
+
+            echo "Available Wi-Fi networks:"
+            IFS=$'\n'
+            select SSID in $AVAILABLE_SSIDS; do
+                if [ -n "$SSID" ]; then
+                    WIFI_SSID="$SSID"
+                break
+                else
+                    echo "Invalid selection. Please try again."
+                fi
+            done
+            unset IFS
+
+            echo "Selected Wi-Fi SSID: $WIFI_SSID"
     
-    clear #clear screen
-    echo "Enable Thinkpad Wifi NFS Shares"
-    # Function to update the nfs1.sh script
-   # Ask for Wi-Fi SSID
-    #read -p "Enter the Wi-Fi SSID: " WIFI_SSID
-    # List available Wi-Fi networks and let the user select one
-    echo "Scanning for available Wi-Fi networks..."
-    AVAILABLE_SSIDS=$(nmcli -t -f SSID dev wifi | sort -u)
+            # Ask for remote shares
+            read -p "Enter the first remote share (e.g., 10.0.0.10:/mnt/data/General): " REMOTESHARE_1
+            read -p "Enter the second remote share (e.g., 10.0.0.10:/mnt/data/Plex): " REMOTESHARE_2
 
-    if [ -z "$AVAILABLE_SSIDS" ]; then
-        echo "No Wi-Fi networks found. Exiting..."
-        exit 1
-    fi
+            # Ask for local mount points
+            read -p "Enter the first local mount point (e.g., /mnt/General): " LOCALMOUNT1
+            read -p "Enter the second local mount point (e.g., /mnt/jellyfin): " LOCALMOUNT2
 
-    echo "Available Wi-Fi networks:"
-    IFS=$'\n'
-    select SSID in $AVAILABLE_SSIDS; do
-        if [ -n "$SSID" ]; then
-            WIFI_SSID="$SSID"
+            # Create local mount points if they do not exist
+            [ ! -d "$LOCALMOUNT1" ] && mkdir -p "$LOCALMOUNT1"
+            [ ! -d "$LOCALMOUNT2" ] && mkdir -p "$LOCALMOUNT2"
+
+            # Path to the nfs1.sh script
+            NFS_SCRIPT="nfs1.sh"
+
+            # Use sed to update the nfs1.sh script with the new values
+            sed -i "s/^WIFI_SSID=.*/WIFI_SSID=\"$WIFI_SSID\"/" $NFS_SCRIPT
+            sed -i "s|^REMOTESHARE_1=.*|REMOTESHARE_1=\"$REMOTESHARE_1\"|" $NFS_SCRIPT
+            sed -i "s|^REMOTESHARE_2=.*|REMOTESHARE_2=\"$REMOTESHARE_2\"|" $NFS_SCRIPT
+            sed -i "s|^LOCALMOUNT1=.*|LOCALMOUNT1=\"$LOCALMOUNT1\"|" $NFS_SCRIPT
+            sed -i "s|^LOCALMOUNT2=.*|LOCALMOUNT2=\"$LOCALMOUNT2\"|" $NFS_SCRIPT
+            #Inform User Changes made
+            echo "The nfs1.sh script has been updated successfully."
+            sleep 2
+            #install Service
+            cp nfs-start.service /etc/systemd/system/
+            cp nfs1.sh /usr/bin/
+            systemctl enable nfs-start.service
+            systemctl start nfs-start.service
+            ;;
+
+        2)
+            # Connect NFS Shares VIA FSTAB
+            # Function to add NFS entry to /etc/fstab
+            clear # clear screen
+            echo "NFS Shares Via FSTAB ( WIRED ONLY )"
+            add_to_fstab() {
+                local nfs_share=$1
+                local mount_point=$2
+                local options="rw,sync,hard,intr,rsize=8192,wsize=8192,timeo=14"
+
+                # Backup /etc/fstab before making changes (only once)
+                if [ ! -f /etc/fstab.bak ]; then
+                    cp /etc/fstab /etc/fstab.bak
+                fi
+
+                # Append the NFS entry to the end of /etc/fstab
+                echo "${nfs_share} ${mount_point} nfs ${options} 0 0" >> /etc/fstab
+
+                echo "Added ${nfs_share} to /etc/fstab"
+            }
+
+            # Prompt the user for the number of shares to add
+            read -p "How many NFS shares would you like to add? " num_shares
+
+            for (( i=1; i<=num_shares; i++ )); do
+            # Prompt the user for the NFS share and mount point
+            read -p "Enter the NFS share #$i (e.g., server:/path): " nfs_share
+            read -p "Enter the mount point #$i (e.g., /mnt/nfs): " mount_point
+
+            # Create the mount point directory if it doesn't exist
+            if [ ! -d "${mount_point}" ]; then
+                mkdir -p "${mount_point}"
+                echo "Created mount point directory ${mount_point}"
+            else
+                echo "Mount point directory ${mount_point} already exists"
+            fi
+
+            # Add the NFS entry to /etc/fstab
+            add_to_fstab "${nfs_share}" "${mount_point}"
+            done
+
+            # Mount all NFS shares
+            mount -a
+
+            echo "All specified NFS shares have been mounted."
+            ;;
+
+        b|B)
+            # Back option: exit the loop
+            echo "Going back..."
             break
-        else
-            echo "Invalid selection. Please try again."
-        fi
-    done
-    unset IFS
+            ;;
 
-    echo "Selected Wi-Fi SSID: $WIFI_SSID"
-    
-    # Ask for remote shares
-    read -p "Enter the first remote share (e.g., 10.0.0.10:/mnt/data/General): " REMOTESHARE_1
-    read -p "Enter the second remote share (e.g., 10.0.0.10:/mnt/data/Plex): " REMOTESHARE_2
-
-    # Ask for local mount points
-    read -p "Enter the first local mount point (e.g., /mnt/General): " LOCALMOUNT1
-    read -p "Enter the second local mount point (e.g., /mnt/jellyfin): " LOCALMOUNT2
-
-    # Create local mount points if they do not exist
-    [ ! -d "$LOCALMOUNT1" ] && mkdir -p "$LOCALMOUNT1"
-    [ ! -d "$LOCALMOUNT2" ] && mkdir -p "$LOCALMOUNT2"
-
-    # Path to the nfs1.sh script
-    NFS_SCRIPT="nfs1.sh"
-
-    # Use sed to update the nfs1.sh script with the new values
-    sed -i "s/^WIFI_SSID=.*/WIFI_SSID=\"$WIFI_SSID\"/" $NFS_SCRIPT
-    sed -i "s|^REMOTESHARE_1=.*|REMOTESHARE_1=\"$REMOTESHARE_1\"|" $NFS_SCRIPT
-    sed -i "s|^REMOTESHARE_2=.*|REMOTESHARE_2=\"$REMOTESHARE_2\"|" $NFS_SCRIPT
-    sed -i "s|^LOCALMOUNT1=.*|LOCALMOUNT1=\"$LOCALMOUNT1\"|" $NFS_SCRIPT
-    sed -i "s|^LOCALMOUNT2=.*|LOCALMOUNT2=\"$LOCALMOUNT2\"|" $NFS_SCRIPT
-    #Inform User Changes made
-    echo "The nfs1.sh script has been updated successfully."
-    sleep 2
-    #install Service
-    cp nfs-start.service /etc/systemd/system/
-    cp nfs1.sh /usr/bin/
-    systemctl enable nfs-start.service
-    systemctl start nfs-start.service
+        *)
+            # Invalid option
+            echo "Invalid choice. Please try again."
+            read -p "Press Enter to continue..."
+            ;;
+    esac
+done  
+  
 }
 
 option10() {
@@ -526,7 +604,7 @@ display_menu() {
     echo "6. Enable Flathub"
     echo "7. Install Google Chrome"
     echo "8. Install Virtualization"
-    echo "9. Enable Thinkpad Wifi NFS Shares"
+    echo "9. Enable Wifi NFS Shares / FSTAB NFS Shares"
     echo "10. Fedora Theme Fixs"
     echo "Q. Quit"
 }
