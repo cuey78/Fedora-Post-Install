@@ -568,6 +568,15 @@ option10() {
 
             echo "Files copied from $SOURCE_DIR to $DEST_DIR successfully."
 
+            # Define the target file
+            FILE="$HOME/.config/ksplashrc"
+
+            # Write the specified lines to the ksplashrc file
+            echo -e "[KSplash]\nTheme=FedoraMinimal" > "$FILE"
+
+            # Print a success message
+            echo "Fedora KDE Splash Screen Theme Fixed."
+
             # Pause to give user time to read the final message
             sleep 5
             ;;
