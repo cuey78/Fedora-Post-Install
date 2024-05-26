@@ -5,7 +5,7 @@ This Script can Install Virtulization
 2. Setup Intel GVT Surport 
 3. Download build and install Looking-Glass-client
 4. Wifi NFS Shares Service , Nfs via fstab ( Wired )
-5. Fix Fedora Ugly grub Screen and Fix Kde Splash Scrren to Match Fedora Logo and Not KDE Logo
+5. Fix Fedora Ugly grub Screen and Fix Kde Splash Screen to Match Fedora Logo and Not KDE Logo
 6. Enable RPM Fusion
 7. Enable Google Chrome Repo and install
 8. Swap to Mesa Freeworld Drivers for AMD Cards,
