@@ -183,7 +183,7 @@ check_grub_cmdline() {
     echo "$current_line"
 
     # Ask for confirmation to replace the line
-    read -p "Do you want to replace it? (y/n): " choice
+    read -p "Its best to replace it ,Do you want to replace it? (y/n): " choice
     case "$choice" in
         y|Y )
             # Replace the content within the quotes
@@ -192,17 +192,194 @@ check_grub_cmdline() {
             sed -i "s/^GRUB_CMDLINE_LINUX=\"$current_content\"/GRUB_CMDLINE_LINUX=\"$new_content\"/" /etc/default/grub
             ;;
         n|N )
-            echo "No changes made."
+            echo "No changes made. You Will Option to Manual Edit Latter"
             ;;
         * )
-            echo "Invalid choice. No changes made."
+            echo "Invalid choice. No changes made. ***** WARNING *****"
             ;;
     esac
 }
+# Function to ask yes/no questions
+ask_yes_no() {
+    while true; do
+        read -p "$1 (y/n): " yn
+        case $yn in
+            [Yy]* ) return 0;;
+            [Nn]* ) return 1;;
+            * ) echo "Please answer yes (y) or no (n).";;
+        esac
+    done
+}
+# Function to configure the system based on user input
+configure_system() {
+    # Check if INTEL is set to 1
+    if [ "$INTEL" = "1" ]; then
+        # Ask if Intel GVT support is required
+        if ask_yes_no "Do you require Intel GVT support?"; then
+            echo "Intel GVT support will be configured."
+            # Add the code to configure Intel GVT support here
+            #sets GVT surport to yes
+            GVT="1"
+        else
+            #Sets GVT Surport to no
+            GVT="0"
+            echo "Intel GVT support will not be configured."
+        fi
+    fi
+    # Ask if user wants to passthrough a video and audio device
+    if ask_yes_no "Would you like to passthrough a video and audio device?"; then
+        echo "Video and audio passthrough will be configured."
+        # Add the code to configure video and audio passthrough here
+        # Example: echo "video_audio_passthrough_config" >> /etc/config_file
+        select_device "VGA"
+        vga_device_id="${selected_device_id}"
+        vga_device_line="${selected_device_line}"
+        # Call the function for selecting HD device
+        select_device "Audio"
+
+        # Store the selected HD device name and ID in variables
+        hd_device_id="${selected_device_id}"
+        hd_device_line="${selected_device_line}"
+
+        parsed_VIDEO=$(echo "$vga_device_id" | tr -d '[]')
+        parsed_AUDIO=$(echo "$hd_device_id" | tr -d '[]')
+
+        #echo "VGA device line: $vga_device_line"
+        #echo "HD device line: $hd_device_line"
+        echo "Selected VGA device: $parsed_VIDEO"
+        echo "Selected HD device: $parsed_AUDIO"
+        #sets passthrough to yes
+        pass="1"
+
+    else
+        echo "Video and audio passthrough will not be configured."
+        #sets passthrough to no
+        pass="0"
+    fi
+
+    # Ask if user wants to blacklist nouveau
+    if ask_yes_no "Would you like to blacklist nouveau?"; then
+        echo "Nouveau will be blacklisted."
+        # Add the code to blacklist nouveau here
+        # blacklist yes
+        Nouveau="1"
+    else
+        #blacklist no
+        Nouveau="0"
+        echo "Nouveau will not be blacklisted."
+    fi
+
+    echo "Configuration complete."
+}
+configure_intel_iommu() {
+    #asks what user wants to do
+    configure_system
+    # Check each variable and append corresponding strings to the result
+    IOMMU=""
+    IOMMU="intel_iommu=on"
+    if [ "$GVT" -eq 1 ]; then
+        intel1="i915.enable_gvt=1 i915.enable_guc=0"
+        IOMMU="$IOMMU $intel1"
+    fi
+
+    if [ "$pass" -eq 1 ]; then
+        intel2="pcie_aspm=off rd.driver.pre=vfio-pci vfio-pci.ids=$parsed_VIDEO,$parsed_AUDIO"
+        IOMMU="$IOMMU $intel2"
+    fi
+
+    if [ "$Nouveau" -eq 1 ]; then
+        intel3="rd.driver.blacklist=nouveau"
+        IOMMU="$IOMMU $intel3"
+    fi
+  
+}
+
+#get Audio and Video Passthrough ID'S
+select_device() {
+    local device_type=$1
+    local devices=$(lspci -nnk | grep -i "$device_type" | grep -oP '.*\[([0-9a-fA-F]{4}):([0-9a-fA-F]{4})\].*')
+
+    if [ -z "$devices" ]; then
+        echo "No $device_type devices found."
+        return 1
+    fi
+
+    echo "Available $device_type devices:"
+    local index=0
+    local device_ids=()
+    local device_lines=()
+    while read -r device; do
+        index=$((index+1))
+        device_id=$(echo "$device" | grep -oP '\[([0-9a-fA-F]{4}):([0-9a-fA-F]{4})\]')
+        device_ids+=("$device_id")
+        device_lines+=("$device")
+        echo "$index. $device"
+    done <<< "$devices"
+
+    read -p "Enter the number corresponding to your $device_type device: " choice
+    if ! [[ "$choice" =~ ^[0-9]+$ ]]; then
+        echo "Invalid input. Please enter a number."
+        return 1
+    fi
+
+    if [ "$choice" -lt 1 ] || [ "$choice" -gt "${#device_ids[@]}" ]; then
+        echo "Invalid selection. Please enter a valid number."
+        return 1
+    fi
+
+    selected_device_id="${device_ids[$((choice-1))]}"
+    selected_device_line="${device_lines[$((choice-1))]}"
+    clear
+ }
+
+configure_amd_iommu() {
+   configure_system
+    # Check each variable and append corresponding strings to the result
+    IOMMU=""
+    IOMMU="amd_iommu=on"
+
+    if [ "$pass" -eq 1 ]; then
+        AMD1="pcie_aspm=off rd.driver.pre=vfio-pci vfio-pci.ids=$parsed_VIDEO,$parsed_AUDIO"
+        IOMMU="$IOMMU $AMD1"
+    fi
+
+    if [ "$Nouveau" -eq 1 ]; then
+        AMD2="rd.driver.blacklist=nouveau"
+        IOMMU="$IOMMU $AMD2"
+    fi
+}
+
+DETECT_CPU(){
+            ####Detecting CPU
+            CPU=$(lscpu | grep GenuineIntel | rev | cut -d ' ' -f 1 | rev )
+            INTEL="0"
+            if [ "$CPU" = "GenuineIntel" ]
+	        then
+	            INTEL="1" 
+            else
+                INTEL="0"
+            fi
+}
+
 IOMMU_SETUP(){
             clear
+            #asks if need to delete vfio-pci-override-vga.sh
+            if [ -e /sbin/vfio-pci-override-vga.sh ]; then 
+            read -p "Would you like to delete /sbin/vfio-pci-override-vga.sh? (y/n): " choice
+
+            # Check the user's input
+            if [[ "$choice" == "y" || "$choice" == "Y" ]]; then
+            # Attempt to delete the file
+            if rm /sbin/vfio-pci-override-vga.sh; then
+                echo "File deleted successfully."
+            else
+                echo "Failed to delete the file."
+            fi
+            else
+                echo "File deletion canceled."
+            fi
+            fi
             check_grub_cmdline
-            echo "You chose Option 2."
             ##Creating backups
             echo  "Creating backups"
 
@@ -219,27 +396,14 @@ IOMMU_SETUP(){
             fi
 
             cp /etc/default/grub new_grub
-
-            ####Detecting CPU
-            CPU=$(lscpu | grep GenuineIntel | rev | cut -d ' ' -f 1 | rev )
-            INTEL="0"
-
-            if [ "$CPU" = "GenuineIntel" ]
-	        then
-	            INTEL="1"
+            # Dectect cpu type
+            DETECT_CPU
+            if [ "$INTEL" -eq 1 ]; then
+                configure_intel_iommu
+            else
+                configure_amd_iommu
             fi
-
-            #Building string Intel or AMD iommu=on
-            if [ $INTEL = 1 ]
-	        then
-	            IOMMU="intel_iommu=on rd.driver.pre=vfio-pci kvm.ignore_msrs=1 i915.enable_gvt=1 i915.enable_guc=0"
-	            echo "Set Intel IOMMU On"
-	        else
-	            IOMMU="amd_iommu=on rd.driver.pre=vfio-pci kvm.ignore_msrs=1"
-	            echo "Set AMD IOMMU On"
-            fi
-
-                #Putting together new grub string
+             #Putting together new grub string
                 OLD_OPTIONS=`cat new_grub | grep GRUB_CMDLINE_LINUX | cut -d '"' -f 1,2`
 
                 NEW_OPTIONS="$OLD_OPTIONS $IOMMU\""
@@ -263,53 +427,79 @@ IOMMU_SETUP(){
 
                 cp new_grub /etc/default/grub
 
-                #Copying necessary scripts
-                echo "Getting GPU passthrough scripts ready"
+               # Check if passthrough is required
+                if [ "$pass" = "1" ]; then
+                # Copying necessary scripts
+                    echo "Getting GPU passthrough scripts ready"
 
-                cp vfio-pci-override-vga.sh /sbin/vfio-pci-override-vga.sh
+                    cp vfio-pci-override-vga.sh /sbin/vfio-pci-override-vga.sh
 
-                chmod 755 /sbin/vfio-pci-override-vga.sh
+                    chmod 755 /sbin/vfio-pci-override-vga.sh
 
-                echo "install vfio-pci /sbin/vfio-pci-override-vga.sh" > /etc/modprobe.d/local.conf
+                    echo "install vfio-pci /sbin/vfio-pci-override-vga.sh" > /etc/modprobe.d/local.conf
 
-                cp local.conf /etc/dracut.conf.d/local.conf
-
+                    cp local.conf /etc/dracut.conf.d/local.conf
+                fi
+                
                 echo "Updating grub and generating initramfs"
 
                 grub2-mkconfig -o /boot/grub2/grub.cfg
                 grub2-mkconfig -o /boot/efi/EFI/fedora/grub.cfg
                 dracut -f --kver `uname -r`
-                sleep 1
 }
-enable_intel_gvt_service()(
-               clear
-                echo "=========================================="
-                echo "|   Enable INTEL GVT SERVICE             |"
-                echo "=========================================="  
+#prob going remove this
+enable_intel_gvt_service() {
+    clear
+    echo "=========================================="
+    echo "|   Enable INTEL GVT SERVICE             |"
+    echo "=========================================="
+    
+    GPU=""
+    MAX=0
+    UUID=$(uuidgen)
+    VIRT_USER=$(logname)
 
-                echo "Place Holder"
-                sleep 10 
-)
+    # Finding the Intel GPU and choosing the one with the highest weight value
+    for i in $(find /sys/devices/pci* -name 'mdev_supported_types'); do
+        for y in $(find "$i" -name 'description'); do
+            WEIGHT=$(cat "$y" | tail -1 | cut -d ' ' -f 2)
+            if [ "$WEIGHT" -gt "$MAX" ]; then
+                GPU=$(echo "$y" | cut -d '/' -f 1-7)
+                MAX="$WEIGHT"
+            fi
+        done
+    done
+
+    if [ -n "$GPU" ]; then
+        echo "	<hostdev mode='subsystem' type='mdev' managed='no' model='vfio-pci' display='off'>" > virsh.txt
+        echo "	<source>" >> virsh.txt
+        echo "		<address uuid=\"$UUID\"/>" >> virsh.txt
+        echo "	</source>" >> virsh.txt
+        echo "</hostdev>" >> virsh.txt
+
+        # Initializing virtual GPU on every startup
+        echo "echo $UUID > $GPU/create" >> gvt_pe.sh
+
+        # Create a systemd service to initialize the GPU on startup
+        cp gvt_pe.service /etc/systemd/system/gvt_pe.service
+        chmod 644 /etc/systemd/system/gvt_pe.service
+
+        mv gvt_pe.sh /usr/bin/gvt_pe.sh
+
+        systemctl enable gvt_pe.service
+        systemctl start gvt_pe.service
+
+        chown "$VIRT_USER" virsh.txt
+    else
+        echo "No Intel GPU found with mdev_supported_types"
+    fi
+    sleep 5
+}
 
 
 install_virtualization() {
-    echo "Install Virtualization"
-    if [ -e /sbin/vfio-pci-override-vga.sh ]; then 
-        read -p "Would you like to delete /sbin/vfio-pci-override-vga.sh? (y/n): " choice
-
-    # Check the user's input
-    if [[ "$choice" == "y" || "$choice" == "Y" ]]; then
-        # Attempt to delete the file
-        if rm /sbin/vfio-pci-override-vga.sh; then
-            echo "File deleted successfully."
-    else
-        echo "Failed to delete the file."
-    fi
-    else
-        echo "File deletion canceled."
-    fi
+    
     #Main Virt Menu
-    fi
         while true; do
             clear
             echo "======================="
