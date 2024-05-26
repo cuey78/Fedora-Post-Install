@@ -453,7 +453,7 @@ enable_intel_gvt_service() {
     echo "=========================================="
     echo "|   Enable INTEL GVT SERVICE             |"
     echo "=========================================="
-    
+    modprobe kvmgt mdev vfio-iommu-type1
     GPU=""
     MAX=0
     UUID=$(uuidgen)
@@ -478,6 +478,7 @@ enable_intel_gvt_service() {
         echo "</hostdev>" >> virsh.txt
 
         # Initializing virtual GPU on every startup
+        echo "modprobe kvmgt mdev vfio-iommu-type1" >> gvt_pe.sh
         echo "echo $UUID > $GPU/create" >> gvt_pe.sh
 
         # Create a systemd service to initialize the GPU on startup
