@@ -3,7 +3,7 @@ clear
 # Source the functions script
 # Check if Function.db exists in the current directory
 if [ -e "./Function.db" ]; then
-    echo "Importing Fuctions....."
+    echo "Importing Functions....."
     source ./Function.db
 else
     echo "Function.db does not exist in the current directory."
