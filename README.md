@@ -1,4 +1,5 @@
 Fedora Post Install Script
+--------------------------
 
 Tested on Fedora 40 with KDE should work on 39 or Gnome just fine.
 
