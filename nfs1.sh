@@ -1,16 +1,16 @@
 #!/bin/bash
 
 # Set your Wi-Fi SSID
-WIFI_SSID="Optus_A81151"
+WIFI_SSID=""
 
 # Remote Shares
-REMOTE_SERVER="10.0.0.10"
-REMOTESHARE_1="/mnt/data/General"
-REMOTESHARE_2="/mnt/data/Plex"
+REMOTE_SERVER=""
+REMOTESHARE_1=""
+REMOTESHARE_2=""
 
 # Local Mount Points
-LOCALMOUNT1="/mnt/General"
-LOCALMOUNT2="/mnt/Jellyfin"
+LOCALMOUNT1=""
+LOCALMOUNT2=""
 
 echo $REMOTE_SERVER  # Corrected: echo the variable's value
 # Function to check if WiFi is connected
