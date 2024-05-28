@@ -1,24 +1,59 @@
 #!/bin/bash
 
 # Set your Wi-Fi SSID
-WIFI_SSID=""
-#Remote Shares
-REMOTESHARE_1=""
-REMOTESHARE_2=""
-#Local Mount Point
-LOCALMOUNT1=""
-LOCALMOUNT2=""
-# Check if Wi-Fi is connected
-if nmcli | grep -q "$WIFI_SSID"; then
-    echo "Wi-Fi is connected to $WIFI_SSID"
+WIFI_SSID="Optus_A81151"
 
-    # Add your NFS share mount commands here
-    # For example:
-    mount -t nfs $REMOTESHARE_1 $LOCALMOUNT1
-    mount -t nfs $REMOTESHARE_2 $LOCALMOUNT2
-# Add as many mount commands as needed
+# Remote Shares
+REMOTE_SERVER="10.0.0.10"
+REMOTESHARE_1="/mnt/data/General"
+REMOTESHARE_2="/mnt/data/Plex"
 
-    echo "NFS shares reconnected successfully"
-else
-    echo "Wi-Fi is not connected to $WIFI_SSID. Exiting..."
-fi
+# Local Mount Points
+LOCALMOUNT1="/mnt/General"
+LOCALMOUNT2="/mnt/Jellyfin"
+
+echo $REMOTE_SERVER  # Corrected: echo the variable's value
+# Function to check if WiFi is connected
+check_wifi_connected() {
+    if nmcli | grep -q "$WIFI_SSID"; then
+        return 0  # WiFi connected
+    else
+        return 1  # WiFi not connected
+    fi
+}
+
+# Function to check if the server is reachable
+check_server_reachable() {
+    if ping -c 1 "$REMOTE_SERVER" >/dev/null 2>&1; then
+        return 0  # Server reachable
+    else
+        return 1  # Server unreachable
+    fi
+}
+
+# Main loop
+while :
+do
+    # Check if WiFi is connected
+    if check_wifi_connected; then
+        echo "WiFi connected"
+
+        # Check if the server is reachable
+        if check_server_reachable; then
+            echo "Server reachable"
+            break  # Exit the loop if both WiFi and server are reachable
+        else
+            echo "Server not reachable, retrying in 5 seconds..."
+        fi
+    else
+        echo "WiFi not connected, retrying in 5 seconds..."
+    fi
+
+    # Wait for 5 seconds before retrying
+    sleep 5
+done
+
+# If both WiFi and server are reachable, connect to NFS shares
+mount -t nfs "$REMOTE_SERVER"":""$REMOTESHARE_1" "$LOCALMOUNT1"
+mount -t nfs "$REMOTE_SERVER"":""$REMOTESHARE_2" "$LOCALMOUNT2"
+echo "NFS shares connected successfully"

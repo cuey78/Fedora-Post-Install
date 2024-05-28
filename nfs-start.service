@@ -1,13 +1,13 @@
 [Unit]
 Description=Start Wifi NFS Connect
 Wants=network-online.target
-After=network-online.target
+After=multi-user.target
 
 [Service]
-Type=simple
+Type=oneshot
 ExecStart=/usr/bin/nfs1.sh
 User=root
 #Group=your_groupname
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=network-online.target
