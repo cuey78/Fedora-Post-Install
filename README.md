@@ -1,5 +1,7 @@
 Fedora Post Install Script
 
+Tested on Fedora 40 with KDE should work on 39 or Gnome just fine.
+
 What this Script can do. 
 1. Virtmanger and Qemu install
 2. pci passthrough for AMD or Intel
