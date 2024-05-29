@@ -521,6 +521,7 @@ install_virtualization() {
                 2 "Enable IOMMU And Update Grub" \
                 3 "Installing Looking-Glass-Client" \
                 4 "Enabling Intel GVT Service" \
+                5 "Run Virtmanager as Non Root" \
                 B "Back" \
                 3>&1 1>&2 2>&3)
 
@@ -530,6 +531,7 @@ install_virtualization() {
             2) IOMMU_SETUP ;;
             3) install_looking_glass_client ;;
             4) enable_intel_gvt_service ;;
+            5) virtman_noroot ;;
             B) break ;;
             *) echo "Invalid option. Please try again." ;;
         esac
@@ -853,5 +855,51 @@ fedora_theme_fix() {
     done
         
 }
+#Run Virtmaner as non root
+virtman_noroot(){
+     # Check if the file exists
+    conf_file="/etc/libvirt/libvirtd.conf"
+    if [ -f "$conf_file" ]; then
+        # Uncomment specific lines
+        sed -i '/^#unix_sock_group/s/^#//' "$conf_file"
+        sed -i '/^#unix_sock_rw_perms/s/^#//' "$conf_file"
 
+        # Verify changes
+        echo "Changes made to $conf_file:"
+        grep -E '^unix_sock_group|^unix_sock_rw_perms' "$conf_file"
+    else
+        echo "$conf_file not found."
+        return 1
+    fi
+
+   # Check if libvirt group exists
+    if ! getent group | grep -q "^libvirt:"; then
+        dialog --msgbox "libvirt group does not exist." 0 0
+        return 1
+    fi
+
+    # Check if the current user is already in the libvirt group
+    if groups "$(logname)" | grep -q '\blibvirt\b'; then
+         dialog --msgbox "Current user is already in the libvirt group." 0 0
+         return 1
+    else
+        # Add the current user to the libvirt group
+        usermod -a -G libvirt "$(logname)"
+        dialog --msgbox "Added $(logname) to the libvirt group." 0 0
+    fi
+
+    # Activate changes by switching to the libvirt group
+    newgrp libvirt
+
+    # Restart or start libvirtd service
+    if systemctl is-active --quiet libvirtd.service; then
+        echo "Restarting libvirtd service..."
+        systemctl restart libvirtd.service
+    else
+        echo "Starting libvirtd service..."
+        systemctl start libvirtd.service
+    fi
+    dialog --msgbox "Virtmnger as Non Root Active" 0 0
+    return 1
+}
 
