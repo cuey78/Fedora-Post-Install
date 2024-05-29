@@ -537,69 +537,118 @@ install_virtualization() {
 }
 
 
-wifi_nfs_shares() {
-    echo "WIFI NFS Shares"
-    # Setups up NFS Shares to connect Via Wifi
-    clear #clear screen
-            echo "Enable Wifi NFS Shares"
-            # Function to update the nfs1.sh script
-            # Ask for Wi-Fi SSID
-            #read -p "Enter the Wi-Fi SSID: " WIFI_SSID
-            # List available Wi-Fi networks and let the user select one
-            echo "Scanning for available Wi-Fi networks..."
-            AVAILABLE_SSIDS=$(nmcli -t -f SSID dev wifi | sort -u)
+setup_wifi_nfs_shares() {
+    # Function to scan for available Wi-Fi networks and select one
+    scan_and_select_wifi() {
+        echo "Scanning for available Wi-Fi networks..."
+        AVAILABLE_SSIDS=$(nmcli -t -f SSID dev wifi | sort -u)
 
-            if [ -z "$AVAILABLE_SSIDS" ]; then
-                echo "No Wi-Fi networks found. Exiting..."
-                sleep 5
-            else
-            
-            echo "Available Wi-Fi networks:"
-            IFS=$'\n'
-            select SSID in $AVAILABLE_SSIDS; do
-                if [ -n "$SSID" ]; then
-                    WIFI_SSID="$SSID"
+        if [ -z "$AVAILABLE_SSIDS" ]; then
+            echo "No Wi-Fi networks found. Exiting..."
+            sleep 5
+            exit 1
+        fi
+
+        echo "Available Wi-Fi networks:"
+        IFS=$'\n'
+        select SSID in $AVAILABLE_SSIDS; do
+            if [ -n "$SSID" ]; then
+                WIFI_SSID="$SSID"
                 break
-                else
-                    echo "Invalid selection. Please try again."
-                fi
-            done
-            unset IFS
-
-            echo "Selected Wi-Fi SSID: $WIFI_SSID"
-            # Ask for Server IP
-            read -p "Enter IP of Server (e.g. , 10.0.0.10)" REMOTE_SERVER
-            # Ask for remote shares
-            read -p "Enter the first remote share (e.g., /mnt/data/General): " REMOTESHARE_1
-            read -p "Enter the second remote share (e.g., /mnt/data/Plex): " REMOTESHARE_2
-
-            # Ask for local mount points
-            read -p "Enter the first local mount point (e.g., /mnt/General): " LOCALMOUNT1
-            read -p "Enter the second local mount point (e.g., /mnt/jellyfin): " LOCALMOUNT2
-
-            # Create local mount points if they do not exist
-            [ ! -d "$LOCALMOUNT1" ] && mkdir -p "$LOCALMOUNT1"
-            [ ! -d "$LOCALMOUNT2" ] && mkdir -p "$LOCALMOUNT2"
-
-            # Path to the nfs1.sh script
-            NFS_SCRIPT="nfs1.sh"
-
-            # Use sed to update the nfs1.sh script with the new values
-            sed -i "s/^WIFI_SSID=.*/WIFI_SSID=\"$WIFI_SSID\"/" $NFS_SCRIPT
-            sed -i "s|^REMOTE_SERVER=.*|REMOTE_SERVER=\"$REMOTE_SERVER\"|" $NFS_SCRIPT
-            sed -i "s|^REMOTESHARE_1=.*|REMOTESHARE_1=\"$REMOTESHARE_1\"|" $NFS_SCRIPT
-            sed -i "s|^REMOTESHARE_2=.*|REMOTESHARE_2=\"$REMOTESHARE_2\"|" $NFS_SCRIPT
-            sed -i "s|^LOCALMOUNT1=.*|LOCALMOUNT1=\"$LOCALMOUNT1\"|" $NFS_SCRIPT
-            sed -i "s|^LOCALMOUNT2=.*|LOCALMOUNT2=\"$LOCALMOUNT2\"|" $NFS_SCRIPT
-            #Inform User Changes made
-            echo "The nfs1.sh script has been updated successfully."
-            sleep 2
-            #install Service
-            cp nfs-start.service /etc/systemd/system/
-            cp nfs1.sh /usr/bin/
-            systemctl enable nfs-start.service
-            dialog --msgbox "Wifi Shares Active on Next Reboot" 0 0
+            else
+                echo "Invalid selection. Please try again."
             fi
+        done
+        unset IFS
+
+        echo "Selected Wi-Fi SSID: $WIFI_SSID"
+    }
+
+    # Function to update the nfs1.sh script
+    update_nfs_script() {
+        local wifi_ssid="$1"
+        local remote_server="$2"
+        local nfs_shares=("${!3}")
+        local mount_points=("${!4}")
+        local script_path="nfs1.sh"
+
+        if [ -z "$wifi_ssid" ] || [ -z "$remote_server" ]; then
+            echo "Error: Wi-Fi SSID or remote server IP is null or empty." >&2
+            return 1
+        fi
+
+        # Temporary file to store the new content
+        local temp_script="${script_path}.tmp"
+
+        # Read the existing content of the nfs1.sh script, excluding any previous variable definitions
+        local existing_content=$(grep -vE '^WIFI_SSID=|^REMOTE_SERVER=|^REMOTESHARE_|^LOCALMOUNT_' "$script_path")
+
+        # Write the new variables at the top of the temporary script
+        {   echo "#!/bin/bash"
+            echo "num_shares=\"$num_shares\""
+            echo "WIFI_SSID=\"$wifi_ssid\""
+            echo "REMOTE_SERVER=\"$remote_server\""
+            for (( j=0; j<${#nfs_shares[@]}; j++ )); do
+                echo "REMOTESHARE_$((j+1))=\"${nfs_shares[j]}\""
+                echo "LOCALMOUNT_$((j+1))=\"${mount_points[j]}\""
+            done
+            # Append the rest of the original script
+            echo "$existing_content"
+        } > "$temp_script"
+
+        mv "$temp_script" "$script_path"
+    }
+
+    # Main function to handle Wi-Fi NFS Shares setup
+    wifi_nfs_shares() {
+        echo "Enable Wi-Fi NFS Shares"
+        clear # Clear the screen
+
+        # Scan and select Wi-Fi
+        scan_and_select_wifi
+
+        # Prompt the user for the number of NFS shares to add
+        read -p "How many NFS shares would you like to add? " num_shares
+        read -p "Enter IP of Server (e.g., 10.0.0.10): " REMOTE_SERVER
+
+        nfs_shares=()
+        mount_points=()
+
+        # Loop through the number of shares and prompt the user for each share
+        for (( i=1; i<=num_shares; i++ )); do
+            read -p "Enter the NFS share #$i (e.g., server:/path): " nfs_share
+            read -p "Enter the mount point #$i (e.g., /mnt/nfs): " mount_point
+
+            # Create the mount point directory if it doesn't exist
+            if [ ! -d "${mount_point}" ]; then
+                mkdir -p "${mount_point}"
+                echo "Created mount point directory ${mount_point}"
+            else
+                echo "Mount point directory ${mount_point} already exists"
+            fi
+
+            nfs_shares+=("$nfs_share")
+            mount_points+=("$mount_point")
+        done
+
+        # Update the nfs1.sh script with the new values
+        update_nfs_script "$WIFI_SSID" "$REMOTE_SERVER" nfs_shares[@] mount_points[@]
+
+        echo "All specified NFS shares have been added to the nfs1.sh script."
+
+        # Message indicating that Wi-Fi shares will be active on the next reboot
+        dialog --msgbox "Wi-Fi Shares Active on Next Reboot" 0 0
+
+        sleep 2
+        # Install Service
+        cp nfs-start.service /etc/systemd/system/
+        cp nfs1.sh /usr/bin/
+        systemctl enable nfs-start.service
+        dialog --msgbox "Wifi Shares Active on Next Reboot" 0 0
+    }
+
+    # Call the main function
+    wifi_nfs_shares
 }
 
 nfs_shares_via_fstab() {
@@ -686,7 +735,7 @@ nfs_setup(){
 
         clear
         case $CHOICE in
-            1) wifi_nfs_shares ;;
+            1) setup_wifi_nfs_shares ;;
             2) nfs_shares_via_fstab ;;
             B) break ;;
             *) echo "Invalid option. Please try again." ;;

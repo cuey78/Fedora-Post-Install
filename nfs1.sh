@@ -1,18 +1,6 @@
-#!/bin/bash
-
-# Set your Wi-Fi SSID
-WIFI_SSID=""
-
-# Remote Shares
-REMOTE_SERVER=""
-REMOTESHARE_1=""
-REMOTESHARE_2=""
-
-# Local Mount Points
-LOCALMOUNT1=""
-LOCALMOUNT2=""
 
 echo $REMOTE_SERVER  # Corrected: echo the variable's value
+
 # Function to check if WiFi is connected
 check_wifi_connected() {
     if nmcli | grep -q "$WIFI_SSID"; then
@@ -54,6 +42,6 @@ do
 done
 
 # If both WiFi and server are reachable, connect to NFS shares
-mount -t nfs "$REMOTE_SERVER"":""$REMOTESHARE_1" "$LOCALMOUNT1"
-mount -t nfs "$REMOTE_SERVER"":""$REMOTESHARE_2" "$LOCALMOUNT2"
-echo "NFS shares connected successfully"
+for (( i=1; i<=num_shares; i++ )); do
+    eval "mount -t nfs \"\$REMOTE_SERVER:\${REMOTESHARE_$i}\" \"\${LOCALMOUNT_$i}\""
+done
