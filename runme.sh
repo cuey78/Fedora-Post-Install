@@ -39,16 +39,16 @@ log_action() {
 }
 # Options for the menu
 OPTIONS=(
-    1 "1. Fix and Clean DNF"
-    2 "2. Check for Firmware update"
-    3 "3. Install RPM Fusion"
-    4 "4. Install Drivers"
-    5 "5. Install Media Codecs"
-    6 "6. Enable Flathub"
-    7 "7. Install Google Chrome"
-    8 "8. Install Virtualization"
-    9 "9. NFS Shares Setup ( Wifi / Wired )"
-    10 "10. Extras"
+    1 "Fix and Clean DNF"
+    2 "Check for Firmware update"
+    3 "Install RPM Fusion"
+    4 "Install Drivers"
+    5 "Install Media Codecs"
+    6 "Enable Flathub"
+    7 "Install Google Chrome"
+    8 "Install Virtualization"
+    9 "NFS Shares Setup ( Wifi / Wired )"
+    10 "Extras"
     Q "Q. Quit"
 
 )
