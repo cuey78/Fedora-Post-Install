@@ -48,7 +48,7 @@ OPTIONS=(
     7 "7. Install Google Chrome"
     8 "8. Install Virtualization"
     9 "9. NFS Shares Setup ( Wifi / Wired )"
-    10 "10. Fedora Theme Fix"
+    10 "10. Extras"
     Q "Q. Quit"
 
 )
