@@ -49,7 +49,7 @@ OPTIONS=(
     8 "Install Virtualization"
     9 "NFS Shares Setup ( Wifi / Wired )"
     10 "Extras"
-    Q "Q. Quit"
+    Q "Quit"
 
 )
 # Main loop

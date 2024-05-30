@@ -878,6 +878,7 @@ fedora_theme_fix() {
                 1 "Fix Fedora grub boot screen" \
                 2 "Fix Fedora Default KDE Splash" \
                 3 "Change Grub Timeout" \
+                4 "Change Host Name" \
                 B "Back" \
                 3>&1 1>&2 2>&3)
 
@@ -886,6 +887,7 @@ fedora_theme_fix() {
             1) FIX_GRUB ;;
             2) FIX_KDE_SPLASH ;;
             3) update_grub_timeout ;;
+            4) CH_HOSTNAME;;
             B) break ;;
             *) echo "Invalid option. Please try again." ;;
         esac
@@ -940,3 +942,18 @@ virtman_noroot(){
     return 1
 }
 
+CH_HOSTNAME() {
+    # Capture user input for the hostname
+    hostname=$(dialog --inputbox "Enter new hostname:" 0 0 3>&1 1>&2 2>&3 3>&-)
+
+    # Check if the user pressed Cancel or provided an empty input
+    if [ $? -eq 0 ] && [ -n "$hostname" ]; then
+        # Set the hostname
+        hostnamectl set-hostname "$hostname"
+
+        # Display a message box with the new hostname
+        dialog --msgbox "Hostname set to $hostname" 0 0
+    else
+        dialog --msgbox "Hostname not set or input cancelled" 0 0
+    fi
+}
