@@ -485,7 +485,7 @@ IOMMU_SETUP(){
                 grub2-mkconfig -o /boot/efi/EFI/fedora/grub.cfg
                 dracut -f --kver `uname -r`
 }
-#prob going remove this
+#Intel GVT surport
 enable_intel_gvt_service() {
     clear
     echo "=========================================="
@@ -524,7 +524,7 @@ enable_intel_gvt_service() {
         chmod 644 /etc/systemd/system/gvt_pe.service
 
         mv gvt_pe.sh /usr/bin/gvt_pe.sh
-
+        chmod +x /usr/bin/gvt_pe.sh
         systemctl enable gvt_pe.service
         systemctl start gvt_pe.service
 
@@ -680,6 +680,7 @@ setup_wifi_nfs_shares() {
         # Install Service
         cp nfs-start.service /etc/systemd/system/
         cp nfs1.sh /usr/bin/
+        chmod +x /usr/bin/nfs1.sh
         systemctl enable nfs-start.service
         dialog --msgbox "Wifi Shares Active on Next Reboot" 0 0
     }
