@@ -957,3 +957,13 @@ CH_HOSTNAME() {
         dialog --msgbox "Hostname not set or input cancelled" 0 0
     fi
 }
+execsh(){
+    # Iterate over all .sh files in the current directory
+    for file in *.sh; do
+    if [ -f "$file" ]; then
+        # Add executable permission
+        chmod +x "$file"
+    fi
+    echo "files mark as execuctable"
+done
+}

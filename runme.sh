@@ -9,6 +9,10 @@ else
     echo "Function.db does not exist in the current directory."
     exit 1
 fi
+
+#set exec for scripts
+execsh
+
 # Dialog dimensions
 HEIGHT=0
 WIDTH=0
