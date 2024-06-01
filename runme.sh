@@ -1,6 +1,11 @@
 #!/bin/bash
+color1="\033[0;31m" # Red color
+color2="\033[0;34m"
+# Reset color
+reset_color="\033[0m"
+
 clear
-echo "
+printf "${color1}
 
    ######## ######## ########   #######  ########     ###      
    ##       ##       ##     ## ##     ## ##     ##   ## ##     
@@ -24,9 +29,12 @@ echo "
     ##  ##   ### ##    ##    ##    ##     ## ##       ##       
    #### ##    ##  ######     ##    ##     ## ######## ######## 
         
+    ${color2}
         https://github.com/cuey78/Fedora-Post-Install
       -------------------------------------------------
+${reset_color}
 "
+
 
 # Source the functions script
 # Check if Function.db exists in the current directory
