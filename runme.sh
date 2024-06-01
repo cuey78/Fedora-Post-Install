@@ -1,4 +1,7 @@
 #!/bin/bash
+banner(){
+
+
 color1="\033[0;31m" # Red color
 color2="\033[0;34m"
 # Reset color
@@ -34,7 +37,7 @@ printf "${color1}
       -------------------------------------------------
 ${reset_color}
 "
-
+}
 
 # Source the functions script
 # Check if Function.db exists in the current directory
@@ -74,9 +77,13 @@ notify() {
 }
 # Log function
 log_action() {
+    banner
     local message=$1
     echo "$(date '+%Y-%m-%d %H:%M:%S') - $message" | tee -a $LOG_FILE
 }
+#show banner
+banner
+sleep 1
 # Options for the menu
 OPTIONS=(
     1 "Fix and Clean DNF"
