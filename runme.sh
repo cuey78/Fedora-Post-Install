@@ -38,7 +38,9 @@ printf "${color1}
 ${reset_color}
 "
 }
-
+#show banner
+banner
+sleep 1
 # Source the functions script
 # Check if Function.db exists in the current directory
 if [ -e "./Function.db" ]; then
@@ -81,9 +83,7 @@ log_action() {
     local message=$1
     echo "$(date '+%Y-%m-%d %H:%M:%S') - $message" | tee -a $LOG_FILE
 }
-#show banner
-banner
-sleep 1
+
 # Options for the menu
 OPTIONS=(
     1 "Fix and Clean DNF"
