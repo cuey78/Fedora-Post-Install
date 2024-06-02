@@ -68,6 +68,13 @@ if ! rpm -q dialog &>/dev/null; then
     sudo dnf install -y dialog || { log_action "Failed to install dialog. Exiting."; exit 1; }
     log_action "Installed dialog."
 fi
+
+# Check for dialog installation
+if ! rpm -q xdotool &>/dev/null; then
+    sudo dnf install -y xdotool || { log_action "Failed to install xdotool. Exiting."; exit 1; }
+    log_action "Installed xdotool."
+fi
+
 # Function to display notifications
 notify() {
     local message=$1
