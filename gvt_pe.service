@@ -1,13 +1,12 @@
 [Unit]
 Description=GVT-g service
-Wants=network-online.target
-After=network-online.target
+Wants=multi-user.target
+
 
 [Service]
 Type=simple
 ExecStart=/bin/bash /usr/bin/gvt_pe.sh
 User=root
-#Group=your_groupname
 
 [Install]
 WantedBy=multi-user.target
