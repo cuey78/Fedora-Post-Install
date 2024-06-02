@@ -144,33 +144,35 @@ install_looking_glass_client() {
             cd $dir1
             rm -rf looking-glass-B6
             VIRT_USER=`logname`
-            #Identifying user to set permissions
-            echo 
-            echo "User: $VIRT_USER will be using Looking Glass on this PC. "
-            echo "If that's correct, press (y) otherwise press (n) and you will be able to specify the user."
-            echo 
-            echo "y/n?"
-            read USER_YN
-            
+                   
 
-            #Allowing the user to manually edit the Looking Glass user
-            if [ $USER_YN = 'n' ] || [ $USER_YN = 'N' ]
-	        then
-            USER_YN='n'
-		    while [ '$USER_YN' = "n" ]; do
-			    echo "Enter the new username: "
-			    read VIRT_USER
-    			echo "Is $VIRT_USER correct (y/n)?"
-	    		read USER_YN
-		    done
+          # Prompt the user whether to manually edit the username using dialog
+            USER_YN=$(dialog --stdout --defaultno --yesno "$VIRT_USER Will be Set to use Looking glass, Do you need to manually edit the username?" 0 0)
+
+            # If the user chooses yes, prompt for a new username using dialog
+            if [ "$USER_YN" = "0" ]; then
+                USER_YN='n'
+            while [ "$USER_YN" = "n" ]; do
+                VIRT_USER=$(dialog --stdout --inputbox "Enter the new username:" 0 0)
+                USER_YN=$(dialog --stdout --yesno "Is $VIRT_USER correct?" 0 0)
+            done
             fi
-            echo User $VIRT_USER selected. Press any key to continue:
-            read ANY_KEY
+
+            # Display the selected username
+            dialog --infobox "User $VIRT_USER  has been Selected" 0 0
+            
                     
             touch /dev/shm/looking-glass && chown $VIRT_USER:kvm /dev/shm/looking-glass && chmod 660 /dev/shm/looking-glass
             shm=""
             shm=("f /dev/shm/looking-glass 0660 $VIRT_USER kvm -")
             echo $shm > /etc/tmpfiles.d/10-looking-glass.conf
+            
+            #Set SELINUX permisions
+            clear
+            echo "Setting SELINUX permisions"
+            ausearch -c 'qemu-system-x86' --raw | audit2allow -M my-qemusystemx86 > /dev/null
+            semodule -X 300 -i my-qemusystemx86.pp 
+            setsebool -P domain_can_mmap_files 1
             clear
             
 }
@@ -485,7 +487,7 @@ IOMMU_SETUP(){
                 grub2-mkconfig -o /boot/efi/EFI/fedora/grub.cfg
                 dracut -f --kver `uname -r`
 }
-#prob going remove this
+#Intel GVT surport
 enable_intel_gvt_service() {
     clear
     echo "=========================================="
@@ -524,7 +526,7 @@ enable_intel_gvt_service() {
         chmod 644 /etc/systemd/system/gvt_pe.service
 
         mv gvt_pe.sh /usr/bin/gvt_pe.sh
-
+        chmod +x /usr/bin/gvt_pe.sh
         systemctl enable gvt_pe.service
         systemctl start gvt_pe.service
 
@@ -680,6 +682,7 @@ setup_wifi_nfs_shares() {
         # Install Service
         cp nfs-start.service /etc/systemd/system/
         cp nfs1.sh /usr/bin/
+        chmod +x /usr/bin/nfs1.sh
         systemctl enable nfs-start.service
         dialog --msgbox "Wifi Shares Active on Next Reboot" 0 0
     }
@@ -736,28 +739,67 @@ nfs_shares_via_fstab() {
 }
 #Downloads looking-glass tar file
 download() {
-    if [[ -f "looking-glass-B6.tar.gz" ]]; then echo "File exists"; 
-    else 
-        url1="https://looking-glass.io/artifact/stable/source"
-        USER1=$(logname)
+    filename="looking-glass-B6.tar.gz"
+    url1="https://looking-glass.io/artifact/stable/source/"
+    USER1=$(logname)
+
+    # Function to detect available browser
+    detect_browser() {
+        if command -v chromium-browser &> /dev/null; then
+            echo "chromium-browser"
+        elif command -v google-chrome &> /dev/null; then
+            echo "google-chrome"
+        elif command -v firefox &> /dev/null; then
+            echo "firefox"
+        else
+            echo "none"
+        fi
+    }
+
+    browser=$(detect_browser)
+
+    if [[ "$browser" == "none" ]]; then
+        echo "No supported browsers found. Please install Chromium, Google Chrome, or Firefox."
+        exit 1
+    fi
+
+    if [[ -f "$filename" ]]; then
+        echo "File exists"
+    else
+        echo "Downloading $filename using $browser..."
 
         # Open the URL in the default web browser as the normal user
-        runuser -u $USER1 -- xdg-open "$url1" &> /dev/null &&
-   
-        filename="looking-glass-B6.tar.gz"
+        runuser -u $USER1 -- $browser "$url1" &> /dev/null &
 
-        # Check if the file exists in the Downloads directory
-        if [ -f "/home/"$USER1"/Downloads/$filename" ]; then
-            echo "$filename found in Downloads directory."
-            echo "Moving $filename to the current directory..."
-            mv "/home/"$USER1"/Downloads/$filename" .
+        # Wait for the browser to open and download the file
+        sleep 5
+        
+        # Use xdotool to simulate the download action if needed (depends on the website behavior)
+        # Example for Firefox:
+        if [[ "$browser" == "firefox" ]]; then
+            window_id=$(xdotool search --onlyvisible --name "Mozilla Firefox")
+            xdotool windowactivate $window_id
+            xdotool key --delay 200 Return
+        fi
+
+        # Wait for the user to download the file
+        while [ ! -f "/home/$USER1/Downloads/$filename" ]; do
+            echo "Waiting for $filename to be downloaded..."
+            sleep 5
+        done
+
+        echo "$filename found in Downloads directory."
+        echo "Moving $filename to the current directory..."
+        mv "/home/$USER1/Downloads/$filename" .
+
+        if [[ -f "$filename" ]]; then
             echo "$filename moved successfully."
         else
-            echo "$filename not found in Downloads directory."
+            echo "Failed to move $filename."
         fi
     fi
-   
 }
+
 nfs_setup(){
   while true; do
         CHOICE=$(dialog --clear \
@@ -878,6 +920,9 @@ fedora_theme_fix() {
                 1 "Fix Fedora grub boot screen" \
                 2 "Fix Fedora Default KDE Splash" \
                 3 "Change Grub Timeout" \
+                4 "Change Host Name" \
+                5 "Install Jetbrains mono font" \
+                6 "Microsoft core Fonts" \
                 B "Back" \
                 3>&1 1>&2 2>&3)
 
@@ -886,6 +931,9 @@ fedora_theme_fix() {
             1) FIX_GRUB ;;
             2) FIX_KDE_SPLASH ;;
             3) update_grub_timeout ;;
+            4) CH_HOSTNAME;;
+            5) install_nerd_fonts;;
+            6) install_microsoft_core_fonts;;
             B) break ;;
             *) echo "Invalid option. Please try again." ;;
         esac
@@ -940,3 +988,122 @@ virtman_noroot(){
     return 1
 }
 
+CH_HOSTNAME() {
+    # Capture user input for the hostname
+    hostname=$(dialog --inputbox "Enter new hostname:" 0 0 3>&1 1>&2 2>&3 3>&-)
+
+    # Check if the user pressed Cancel or provided an empty input
+    if [ $? -eq 0 ] && [ -n "$hostname" ]; then
+        # Set the hostname
+        hostnamectl set-hostname "$hostname"
+
+        # Display a message box with the new hostname
+        dialog --msgbox "Hostname set to $hostname" 0 0
+    else
+        dialog --msgbox "Hostname not set or input cancelled" 0 0
+    fi
+}
+execsh(){
+    # Iterate over all .sh files in the current directory
+    for file in *.sh; do
+    if [ -f "$file" ]; then
+        # Add executable permission
+        chmod +x "$file"
+    fi
+    echo "files mark as execuctable"
+done
+}
+
+install_nerd_fonts() {
+  # Variables
+  URL="https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/JetBrainsMono.zip"
+  ZIP_FILE="JetBrainsMono.zip"
+  EXTRACT_DIR="JetBrainsMono"
+  FONT_DIR="/usr/share/fonts/$EXTRACT_DIR"
+  LOG_FILE="install_nerd_fonts.log"
+
+  # Logging function
+  log() {
+    echo "$(date +"%Y-%m-%d %T") - $1" | tee -a $LOG_FILE
+  }
+
+  # Start installation
+  log "Starting installation of Nerd Fonts"
+
+  # Download the ZIP file
+  log "Downloading $URL"
+  wget -O $ZIP_FILE $URL
+  if [ $? -ne 0 ]; then
+    log "Failed to download $URL"
+    exit 1
+  fi
+
+  # Extract the ZIP file
+  log "Extracting $ZIP_FILE"
+  unzip $ZIP_FILE -d $EXTRACT_DIR
+  if [ $? -ne 0 ]; then
+    log "Failed to extract $ZIP_FILE"
+    exit 1
+  fi
+
+  # Check if destination directory exists, if not, create it
+  if [ ! -d "$FONT_DIR" ]; then
+    log "Destination directory $FONT_DIR does not exist. Creating it."
+    mkdir -p $FONT_DIR
+    if [ $? -ne 0 ]; then
+      log "Failed to create directory $FONT_DIR"
+      exit 1
+    fi
+  fi
+
+  # Copy the extracted files to the destination directory
+  log "Copying extracted files to $FONT_DIR"
+  cp -r $EXTRACT_DIR/* $FONT_DIR
+  if [ $? -ne 0 ]; then
+    log "Failed to copy extracted files to $FONT_DIR"
+    exit 1
+  fi
+
+  # Change the ownership to root
+  log "Changing ownership of $FONT_DIR to root"
+  chown -R root: $FONT_DIR
+  if [ $? -ne 0 ]; then
+    log "Failed to change ownership of $FONT_DIR"
+    exit 1
+  fi
+
+  # Change the permissions to 644 for files
+  log "Changing permissions of files in $FONT_DIR to 644"
+  find $FONT_DIR -type f -exec chmod 644 {} \;
+  if [ $? -ne 0 ]; then
+    log "Failed to change file permissions in $FONT_DIR"
+    exit 1
+  fi
+
+  # Apply restorecon to the folder
+  log "Applying restorecon to $FONT_DIR"
+  restorecon -vFr $FONT_DIR
+  if [ $? -ne 0 ]; then
+    log "Failed to apply restorecon to $FONT_DIR"
+    exit 1
+  fi
+
+  # Clean up
+  log "Cleaning up"
+  rm -rf $ZIP_FILE $EXTRACT_DIR
+  if [ $? -ne 0 ]; then
+    log "Failed to remove $ZIP_FILE or $EXTRACT_DIR"
+    exit 1
+  fi
+    sleep 20
+  log "Installation of Nerd Fonts completed successfully"
+}
+install_microsoft_core_fonts() {
+  # Update and install necessary packages
+  sudo dnf upgrade --refresh -y
+  sudo dnf install curl cabextract xorg-x11-font-utils fontconfig -y
+  # Install Microsoft Core Fonts
+  
+  sudo rpm -i https://downloads.sourceforge.net/project/mscorefonts2/rpms/msttcore-fonts-installer-2.6-1.noarch.rpm
+  echo "Installation of Microsoft Core Fonts completed successfully"
+}

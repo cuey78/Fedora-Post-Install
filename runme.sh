@@ -1,5 +1,46 @@
 #!/bin/bash
+banner(){
+
+
+color1="\033[0;31m" # Red color
+color2="\033[0;34m"
+# Reset color
+reset_color="\033[0m"
+
 clear
+printf "${color1}
+
+   ######## ######## ########   #######  ########     ###      
+   ##       ##       ##     ## ##     ## ##     ##   ## ##     
+   ##       ##       ##     ## ##     ## ##     ##  ##   ##    
+   ######   ######   ##     ## ##     ## ########  ##     ##   
+   ##       ##       ##     ## ##     ## ##   ##   #########   
+   ##       ##       ##     ## ##     ## ##    ##  ##     ##   
+   ##       ######## ########   #######  ##     ## ##     ##   
+            ########   #######   ######  ########              
+            ##     ## ##     ## ##    ##    ##                 
+            ##     ## ##     ## ##          ##                 
+            ########  ##     ##  ######     ##                 
+            ##        ##     ##       ##    ##                 
+            ##        ##     ## ##    ##    ##                 
+            ##         #######   ######     ##                 
+   #### ##    ##  ######  ########    ###    ##       ##       
+    ##  ###   ## ##    ##    ##      ## ##   ##       ##       
+    ##  ####  ## ##          ##     ##   ##  ##       ##       
+    ##  ## ## ##  ######     ##    ##     ## ##       ##       
+    ##  ##  ####       ##    ##    ######### ##       ##       
+    ##  ##   ### ##    ##    ##    ##     ## ##       ##       
+   #### ##    ##  ######     ##    ##     ## ######## ######## 
+        
+    ${color2}
+        https://github.com/cuey78/Fedora-Post-Install
+      -------------------------------------------------
+${reset_color}
+"
+}
+#show banner
+banner
+sleep 1
 # Source the functions script
 # Check if Function.db exists in the current directory
 if [ -e "./Function.db" ]; then
@@ -9,6 +50,10 @@ else
     echo "Function.db does not exist in the current directory."
     exit 1
 fi
+
+#set exec for scripts
+execsh
+
 # Dialog dimensions
 HEIGHT=0
 WIDTH=0
@@ -34,22 +79,24 @@ notify() {
 }
 # Log function
 log_action() {
+    banner
     local message=$1
     echo "$(date '+%Y-%m-%d %H:%M:%S') - $message" | tee -a $LOG_FILE
 }
+
 # Options for the menu
 OPTIONS=(
-    1 "1. Fix and Clean DNF"
-    2 "2. Check for Firmware update"
-    3 "3. Install RPM Fusion"
-    4 "4. Install Drivers"
-    5 "5. Install Media Codecs"
-    6 "6. Enable Flathub"
-    7 "7. Install Google Chrome"
-    8 "8. Install Virtualization"
-    9 "9. NFS Shares Setup ( Wifi / Wired )"
-    10 "10. Fedora Theme Fix"
-    Q "Q. Quit"
+    1 "Fix and Clean DNF"
+    2 "Check for Firmware update"
+    3 "Install RPM Fusion"
+    4 "Install Drivers"
+    5 "Install Media Codecs"
+    6 "Enable Flathub"
+    7 "Install Google Chrome"
+    8 "Install Virtualization"
+    9 "NFS Shares Setup ( Wifi / Wired )"
+    10 "Extras"
+    Q "Quit"
 
 )
 # Main loop
