@@ -144,33 +144,35 @@ install_looking_glass_client() {
             cd $dir1
             rm -rf looking-glass-B6
             VIRT_USER=`logname`
-            #Identifying user to set permissions
-            echo 
-            echo "User: $VIRT_USER will be using Looking Glass on this PC. "
-            echo "If that's correct, press (y) otherwise press (n) and you will be able to specify the user."
-            echo 
-            echo "y/n?"
-            read USER_YN
-            
+                   
 
-            #Allowing the user to manually edit the Looking Glass user
-            if [ $USER_YN = 'n' ] || [ $USER_YN = 'N' ]
-	        then
-            USER_YN='n'
-		    while [ '$USER_YN' = "n" ]; do
-			    echo "Enter the new username: "
-			    read VIRT_USER
-    			echo "Is $VIRT_USER correct (y/n)?"
-	    		read USER_YN
-		    done
+          # Prompt the user whether to manually edit the username using dialog
+            USER_YN=$(dialog --stdout --defaultno --yesno "$VIRT_USER Will be Set to use Looking glass, Do you need to manually edit the username?" 0 0)
+
+            # If the user chooses yes, prompt for a new username using dialog
+            if [ "$USER_YN" = "0" ]; then
+                USER_YN='n'
+            while [ "$USER_YN" = "n" ]; do
+                VIRT_USER=$(dialog --stdout --inputbox "Enter the new username:" 0 0)
+                USER_YN=$(dialog --stdout --yesno "Is $VIRT_USER correct?" 0 0)
+            done
             fi
-            echo User $VIRT_USER selected. Press any key to continue:
-            read ANY_KEY
+
+            # Display the selected username
+            dialog --infobox "User $VIRT_USER  has been Selected" 0 0
+            
                     
             touch /dev/shm/looking-glass && chown $VIRT_USER:kvm /dev/shm/looking-glass && chmod 660 /dev/shm/looking-glass
             shm=""
             shm=("f /dev/shm/looking-glass 0660 $VIRT_USER kvm -")
             echo $shm > /etc/tmpfiles.d/10-looking-glass.conf
+            
+            #Set SELINUX permisions
+            clear
+            echo "Setting SELINUX permisions"
+            ausearch -c 'qemu-system-x86' --raw | audit2allow -M my-qemusystemx86 > /dev/null
+            semodule -X 300 -i my-qemusystemx86.pp 
+            setsebool -P domain_can_mmap_files 1
             clear
             
 }
@@ -737,28 +739,67 @@ nfs_shares_via_fstab() {
 }
 #Downloads looking-glass tar file
 download() {
-    if [[ -f "looking-glass-B6.tar.gz" ]]; then echo "File exists"; 
-    else 
-        url1="https://looking-glass.io/artifact/stable/source"
-        USER1=$(logname)
+    filename="looking-glass-B6.tar.gz"
+    url1="https://looking-glass.io/artifact/stable/source/"
+    USER1=$(logname)
+
+    # Function to detect available browser
+    detect_browser() {
+        if command -v chromium-browser &> /dev/null; then
+            echo "chromium-browser"
+        elif command -v google-chrome &> /dev/null; then
+            echo "google-chrome"
+        elif command -v firefox &> /dev/null; then
+            echo "firefox"
+        else
+            echo "none"
+        fi
+    }
+
+    browser=$(detect_browser)
+
+    if [[ "$browser" == "none" ]]; then
+        echo "No supported browsers found. Please install Chromium, Google Chrome, or Firefox."
+        exit 1
+    fi
+
+    if [[ -f "$filename" ]]; then
+        echo "File exists"
+    else
+        echo "Downloading $filename using $browser..."
 
         # Open the URL in the default web browser as the normal user
-        runuser -u $USER1 -- xdg-open "$url1" &> /dev/null &&
-   
-        filename="looking-glass-B6.tar.gz"
+        runuser -u $USER1 -- $browser "$url1" &> /dev/null &
 
-        # Check if the file exists in the Downloads directory
-        if [ -f "/home/"$USER1"/Downloads/$filename" ]; then
-            echo "$filename found in Downloads directory."
-            echo "Moving $filename to the current directory..."
-            mv "/home/"$USER1"/Downloads/$filename" .
+        # Wait for the browser to open and download the file
+        sleep 5
+        
+        # Use xdotool to simulate the download action if needed (depends on the website behavior)
+        # Example for Firefox:
+        if [[ "$browser" == "firefox" ]]; then
+            window_id=$(xdotool search --onlyvisible --name "Mozilla Firefox")
+            xdotool windowactivate $window_id
+            xdotool key --delay 200 Return
+        fi
+
+        # Wait for the user to download the file
+        while [ ! -f "/home/$USER1/Downloads/$filename" ]; do
+            echo "Waiting for $filename to be downloaded..."
+            sleep 5
+        done
+
+        echo "$filename found in Downloads directory."
+        echo "Moving $filename to the current directory..."
+        mv "/home/$USER1/Downloads/$filename" .
+
+        if [[ -f "$filename" ]]; then
             echo "$filename moved successfully."
         else
-            echo "$filename not found in Downloads directory."
+            echo "Failed to move $filename."
         fi
     fi
-   
 }
+
 nfs_setup(){
   while true; do
         CHOICE=$(dialog --clear \
