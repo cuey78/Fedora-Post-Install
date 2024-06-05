@@ -116,9 +116,28 @@ install_media_codecs() {
 }
 
 enable_flathub() {
+    # Check if flatpak is installed
+    if ! command -v flatpak &> /dev/null; then
+        echo "Flatpak is not installed. Installing flatpak..."
+        
+        # Install flatpak using dnf
+        sudo dnf install -y flatpak
+        if [[ $? -ne 0 ]]; then
+            echo "Failed to install flatpak. Please check your package manager."
+            return 1
+        fi
+    fi
+
+    # Add the Flathub repository
     flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-    dialog --msgbox "Flathub Enabled" 0 0
+    if [[ $? -eq 0 ]]; then
+        dialog --msgbox "Flathub Enabled" 0 0
+    else
+        dialog --msgbox "Failed to add Flathub repository." 0 0
+        return 1
+    fi
 }
+
 
 install_google_chrome() {
     dnf install -y fedora-workstation-repositories
@@ -308,6 +327,18 @@ configure_system() {
         Nouveau="0"
         echo "Nouveau will not be blacklisted."
     fi
+    
+    # Ask if user wants to blacklist nouveau
+    if ask_yes_no "Would you like to blacklist amdgpu?"; then
+        echo "Amdgpu will be blacklisted."
+        # Add the code to blacklist amdgpu here
+        # blacklist yes
+        Amdgpu="1"
+    else
+        #blacklist no
+        Amdgpu="0"
+        echo "Amdgpu will not be blacklisted."
+    fi
 
     echo "Configuration complete."
 }
@@ -330,6 +361,10 @@ configure_intel_iommu() {
     if [ "$Nouveau" -eq 1 ]; then
         intel3="rd.driver.blacklist=nouveau"
         IOMMU="$IOMMU $intel3"
+    fi
+    if [ "$Amdgpu" -eq 1 ]; then
+        intel4="rd.driver.blacklist=amdgpu"
+        IOMMU="$IOMMU $intel4"
     fi
   
 }
@@ -386,6 +421,11 @@ configure_amd_iommu() {
     if [ "$Nouveau" -eq 1 ]; then
         AMD2="rd.driver.blacklist=nouveau"
         IOMMU="$IOMMU $AMD2"
+    fi
+    
+    if [ "$Amdgpu" -eq 1 ]; then
+        AMD3="rd.driver.blacklist=amdgpu"
+        IOMMU="$IOMMU $AMD3"
     fi
 }
 
@@ -822,41 +862,48 @@ nfs_setup(){
     done
 }
 FIX_GRUB(){
-        #Fix Fedora Grub Boot Screen
-        GRUB_FILE="/etc/default/grub"
-        SEARCH_LINE='GRUB_TERMINAL_OUTPUT="console"'
-        COMMENTED_LINE='#GRUB_TERMINAL_OUTPUT="console"'
-        THEME_LINE='GRUB_THEME="/boot/grub2/theme/fedora/theme.txt"'
+    # Fix Fedora Grub Boot Screen
+    GRUB_FILE="/etc/default/grub"
+    SEARCH_LINE='GRUB_TERMINAL_OUTPUT="console"'
+    COMMENTED_LINE='#GRUB_TERMINAL_OUTPUT="console"'
+    THEME_LINE='GRUB_THEME="/boot/grub2/theme/fedora/theme.txt"'
+    GFXMODE_LINE='GRUB_GFXMODE=1920x1080,auto'
 
-        # Check if the GRUB file exists
-        if [[ ! -f "$GRUB_FILE" ]]; then
-            echo "Error: $GRUB_FILE does not exist."
-            exit 1
-        fi
+    # Check if the GRUB file exists
+    if [[ ! -f "$GRUB_FILE" ]]; then
+        echo "Error: $GRUB_FILE does not exist."
+        exit 1
+    fi
 
-        # Use sed to comment out the search line and add the theme line
-        if grep -q "^$SEARCH_LINE" "$GRUB_FILE"; then
+    # Use sed to comment out the search line and add the theme line and gfxmode line
+    if grep -q "^$SEARCH_LINE" "$GRUB_FILE"; then
         # Create a backup of the original file
-            cp "$GRUB_FILE" "${GRUB_FILE}.bak"
+        cp "$GRUB_FILE" "${GRUB_FILE}.bak"
     
         # Use sed to perform the required changes
-            sed -i "s|^$SEARCH_LINE|$COMMENTED_LINE\n$THEME_LINE|" "$GRUB_FILE"
-            echo "Updated $GRUB_FILE successfully."
-        else
-            echo "Line $SEARCH_LINE not found in $GRUB_FILE."
-        fi
-        # Source and destination directories
-        SOURCE_DIR="theme"
-        DEST_DIR="/boot/grub2/theme"
-            su -c "mkdir /boot/grub2/theme" root
-            sleep 10
-        #Copy the directory and all its contents
-            su -c "cp -r "$SOURCE_DIR"/* "$DEST_DIR"" root
-            echo "Directory $SOURCE_DIR copied to $DEST_DIR successfully."
-            sleep 5
-            grub2-mkconfig -o /boot/grub2/grub.cfg
-            grub2-mkconfig -o /boot/efi/EFI/fedora/grub.cfg
+        sed -i "s|^$SEARCH_LINE|$COMMENTED_LINE\n$GFXMODE_LINE\n$THEME_LINE|" "$GRUB_FILE"
+        echo "Updated $GRUB_FILE successfully."
+    else
+        echo "Line $SEARCH_LINE not found in $GRUB_FILE."
+    fi
+
+    # Source and destination directories
+    SOURCE_DIR="theme"
+    DEST_DIR="/boot/grub2/theme"
+
+    # Create the destination directory if it does not exist
+    su -c "mkdir -p $DEST_DIR" root
+
+    # Copy the directory and all its contents
+    su -c "cp -r \"$SOURCE_DIR\"/* \"$DEST_DIR\"" root
+    echo "Directory $SOURCE_DIR copied to $DEST_DIR successfully."
+    sleep 5
+
+    # Update grub configuration
+    grub2-mkconfig -o /boot/grub2/grub.cfg
+    grub2-mkconfig -o /boot/efi/EFI/fedora/grub.cfg
 }
+
 FIX_KDE_SPLASH(){
             #Fixs Fedora KDE Default Splash Screen to Match Fedora Logo
             USER2=$(logname)
