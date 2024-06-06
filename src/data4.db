@@ -1,0 +1,222 @@
+#!/bin/bash
+#----------------------------------------------------------------------------------#
+#               This script holds Functions for main Script file                   #
+#               *. check_grub_cmdline                                              #
+#               *. update_grub_timeout                                             #
+#               *. FIX_GRUB                                                        #
+#               *. fedora_theme_fix                                                #
+#               *. CH_HOSTNAME                                                     #
+#               *. FIX_KDE_SPLASH                                                  #
+#----------------------------------------------------------------------------------#
+
+# Edits Grub 
+check_grub_cmdline() {
+    # Read the current GRUB_CMDLINE_LINUX line from /etc/default/grub
+    current_line=$(grep "^GRUB_CMDLINE_LINUX=" /etc/default/grub)
+
+    # Extract the content within the quotes
+    current_content=$(echo "$current_line" | sed 's/GRUB_CMDLINE_LINUX="//;s/"$//')
+
+    # Show the current GRUB_CMDLINE_LINUX line
+    echo "Current GRUB_CMDLINE_LINUX line:"
+    echo "$current_line"
+
+    # Ask for confirmation to replace the line
+    read -p "Its best to replace it ,Do you want to replace it? (y/n): " choice
+    case "$choice" in
+        y|Y )
+            # Replace the content within the quotes
+            new_content="rhgb quiet"
+            # Replace the line in the file
+            sed -i "s/^GRUB_CMDLINE_LINUX=\"$current_content\"/GRUB_CMDLINE_LINUX=\"$new_content\"/" /etc/default/grub
+            ;;
+        n|N )
+            echo "No changes made. You Will Option to Manual Edit Latter"
+            ;;
+        * )
+            echo "Invalid choice. No changes made. ***** WARNING *****"
+            ;;
+    esac
+}
+
+# Function to update GRUB_TIMEOUT in /etc/default/grub
+update_grub_timeout() {
+    local new_timeout
+    local grub_file="/etc/default/grub"
+
+    # Prompt the user for the new GRUB_TIMEOUT value using dialog
+    new_timeout=$(dialog --inputbox "Enter the new GRUB_TIMEOUT value: " 8 40 3>&1 1>&2 2>&3 3>&-)
+
+    # Validate the input (ensure it's a non-negative integer)
+    if [[ $new_timeout =~ ^[0-9]+$ ]]; then
+        # Check if the grub file exists
+        if [[ ! -f $grub_file ]]; then
+            echo "Error: $grub_file does not exist."
+            return 1
+        fi
+
+        # Backup the current grub file
+        cp $grub_file ${grub_file}.bak
+
+        # Update the GRUB_TIMEOUT value
+        sed -i "s/^GRUB_TIMEOUT=.*/GRUB_TIMEOUT=${new_timeout}/" $grub_file
+
+        # Inform the user of the change
+        dialog --msgbox "GRUB_TIMEOUT set to ${new_timeout} in ${grub_file}\n\nGRUB configuration updated." 8 50
+        clear
+        # Update GRUB configuration
+        grub2-mkconfig -o /boot/grub2/grub.cfg
+        grub2-mkconfig -o /boot/efi/EFI/fedora/grub.cfg
+    else
+        dialog --msgbox "Error: Please enter a valid non-negative integer." 8 50
+    fi
+}
+
+# Adds theme and options
+FIX_GRUB(){
+    # Fix Fedora Grub Boot Screen
+    GRUB_FILE="/etc/default/grub"
+    SEARCH_LINE='GRUB_TERMINAL_OUTPUT="console"'
+    COMMENTED_LINE='#GRUB_TERMINAL_OUTPUT="console"'
+    THEME_LINE='GRUB_THEME="/boot/grub2/theme/fedora/theme.txt"'
+    GFXMODE_LINE='GRUB_GFXMODE=1920x1080,auto'
+
+    # Check if the GRUB file exists
+    if [[ ! -f "$GRUB_FILE" ]]; then
+        echo "Error: $GRUB_FILE does not exist."
+        return 1
+    fi
+
+    # Use sed to comment out the search line and add the theme line and gfxmode line
+    if grep -q "^$SEARCH_LINE" "$GRUB_FILE"; then
+        # Create a backup of the original file
+        cp "$GRUB_FILE" "${GRUB_FILE}.bak"
+    
+        # Use sed to perform the required changes
+        sed -i "s|^$SEARCH_LINE|$COMMENTED_LINE\n$GFXMODE_LINE\n$THEME_LINE|" "$GRUB_FILE"
+        echo "Updated $GRUB_FILE successfully."
+    else
+        echo "Line $SEARCH_LINE not found in $GRUB_FILE."
+        return 1
+    fi
+
+    # Source and destination directories
+    SOURCE_DIR="theme"
+    DEST_DIR="/boot/grub2/theme"
+
+    # Create the destination directory if it does not exist
+    su -c "mkdir -p $DEST_DIR" root
+
+    # Copy the directory and all its contents
+    su -c "cp -r \"$SOURCE_DIR\"/* \"$DEST_DIR\"" root
+    echo "Directory $SOURCE_DIR copied to $DEST_DIR successfully."
+    sleep 5
+
+    # Update grub configuration
+    grub2-mkconfig -o /boot/grub2/grub.cfg
+    grub2-mkconfig -o /boot/efi/EFI/fedora/grub.cfg
+}
+# Main Function for Theme Fixs
+fedora_theme_fix() {
+  while true; do
+        CHOICE=$(dialog --clear \
+                --title "Theme Fixes" \
+                --nocancel \
+                --menu "Choose an option:" \
+                15 60 5 \
+                1 "Fix Fedora grub boot screen" \
+                2 "Fix Fedora Default KDE Splash" \
+                3 "Change Grub Timeout" \
+                4 "Change Host Name" \
+                5 "Install Jetbrains mono font" \
+                6 "Microsoft core Fonts" \
+                B "Back" \
+                3>&1 1>&2 2>&3)
+
+        clear
+        case $CHOICE in
+            1) FIX_GRUB ;;
+            2) FIX_KDE_SPLASH ;;
+            3) update_grub_timeout ;;
+            4) CH_HOSTNAME;;
+            5) install_nerd_fonts;;
+            6) install_microsoft_core_fonts;;
+            B) break ;;
+            *) echo "Invalid option. Please try again." ;;
+        esac
+    done
+        
+}
+
+# Changes System Hostname
+CH_HOSTNAME() {
+    # Capture user input for the hostname
+    hostname=$(dialog --inputbox "Enter new hostname:" 0 0 3>&1 1>&2 2>&3 3>&-)
+
+    # Check if the user pressed Cancel or provided an empty input
+    if [ $? -eq 0 ] && [ -n "$hostname" ]; then
+        # Set the hostname
+        hostnamectl set-hostname "$hostname"
+
+        # Display a message box with the new hostname
+        dialog --msgbox "Hostname set to $hostname" 0 0
+    else
+        dialog --msgbox "Hostname not set or input cancelled" 0 0
+    fi
+}
+#tar -xzf ./splash/FedoraMinimal.tar.gz 
+#Applys a Fedora theme Splash Screen to KDE
+FIX_KDE_SPLASH(){
+            #Fixs Fedora KDE Default Splash Screen to Match Fedora Logo
+            USER2=$(logname)
+            USER_HOME="/home/$USER2/.config"
+            TAR_FILE="./splash/FedoraMinimal.tar.gz"
+            SOURCE_DIR="./splash/"
+            DEST_DIR="/home/$USER2/.local/share/plasma/look-and-feel/$SOURCE_DIR"
+
+            # Extract the tar.gz file
+            echo "Extracting $TAR_FILE..."
+            tar -xzf "$TAR_FILE" -C ./splash/ 2>/dev/null
+            if [ $? -ne 0 ]; then
+                echo "Error extracting $TAR_FILE."
+                exit 1
+            fi
+
+            # Ensure the source directory was extracted
+            if [ ! -d "$SOURCE_DIR" ]; then
+                echo "Source directory $SOURCE_DIR not found after extraction."
+                exit 1
+            fi
+
+            # Create the destination directory
+            echo "Creating destination directory $DEST_DIR..."
+            runuser -u "$USER2" -- mkdir -p "$DEST_DIR"
+            if [ $? -ne 0 ]; then
+                echo "Error creating destination directory $DEST_DIR."
+                exit 1
+            fi
+
+            # Copy the files
+            echo "Copying files from $SOURCE_DIR to $DEST_DIR..."
+            runuser -u "$USER2" -- cp -r "$SOURCE_DIR"/* "$DEST_DIR"
+            if [ $? -ne 0 ]; then
+                echo "Error copying files to $DEST_DIR."
+                exit 1
+            fi
+
+            echo "Files copied from $SOURCE_DIR to $DEST_DIR successfully."
+
+            # Define the target file
+            FILE="$USER_HOME/ksplashrc"
+
+            # Write the specified lines to the ksplashrc file
+            echo -e "[KSplash]\nTheme=FedoraMinimal" > "$FILE"
+            # set permissions on config
+            chown $USER2:$USER2 $FILE
+            # Print a success message
+            echo "Fedora KDE Splash Screen Theme Fixed."
+           
+            # Pause to give user time to read the final message
+            sleep 5
+             rm -rf ./splash/FedoraMinimal
+}

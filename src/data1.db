@@ -1,0 +1,176 @@
+#!/bin/bash
+#----------------------------------------------------------------------------------#
+#               This script holds Functions for main Script file                   #
+#               *. fix_and_clean_dnf                                               #
+#               *. check_firmware_update                                           #
+#               *. install_rpm_fusion                                              #
+#               *. install_microsoft_core_fonts                                    #
+#               *. install_nerd_fonts                                              #
+#               *. execsh                                                          #
+#----------------------------------------------------------------------------------#
+
+
+
+
+# does DNF upgrade and performs a dnf clean updates dnf conf
+# adding fastestmirror , max downloads 10, default yes and countme no
+fix_and_clean_dnf() {
+# DNF Conf File path
+dnf_conf="/etc/dnf/dnf.conf"
+
+# Check if dnf.conf exists
+if [ ! -f "$dnf_conf" ]; then
+    echo "dnf.conf not found."
+    exit 1
+fi
+
+# Check if the lines already exist, if not, add them
+    grep -q '^fastestmirror=true$' "$dnf_conf" || echo 'fastestmirror=true' >> "$dnf_conf"
+    grep -q '^max_parallel_downloads=10$' "$dnf_conf" || echo 'max_parallel_downloads=10' >> "$dnf_conf"
+    grep -q '^countme=false$' "$dnf_conf" || echo 'countme=false' >> "$dnf_conf"
+    grep -q '^defaultyes=True$' "$dnf_conf" || echo 'defaultyes=True' >> "$dnf_conf"
+
+    echo "Checked and updated $DNF_CONF"
+    sleep 2
+    # Clean cache and upgrade DNF
+    dnf clean all
+    dnf upgrade -y
+    clear
+}
+
+# This Function performs a firmware update and upgrade if needed
+check_firmware_update() {
+    echo "Check for Firmware update"
+    
+    if command -v fwupdmgr >/dev/null 2>&1; then
+       fwupdmgr get-devices
+       fwupdmgr refresh --force
+       fwupdmgr get-updates -y && fwupdmgr update -y
+    fi
+    echo "Press any Key"
+    read
+    clear
+}
+
+# This Function Install RPM Fusion Repos
+install_rpm_fusion() {
+    echo "Install RPM Fusion"
+    
+    fedora_version=$(rpm -E %fedora)
+    rpmfusion_free_url="https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-${fedora_version}.noarch.rpm"
+    rpmfusion_nonfree_url="https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-${fedora_version}.noarch.rpm"
+
+    dnf install -y --nogpgcheck "$rpmfusion_free_url" "$rpmfusion_nonfree_url"
+    dnf install -y rpmfusion-free-appstream-data rpmfusion-nonfree-appstream-data 
+    dnf install -y rpmfusion-free-release-tainted rpmfusion-nonfree-release-tainted
+    clear
+}
+
+#Function Installs A nerd font called Jetbrains Mono
+install_nerd_fonts() {
+  # Variables
+  URL="https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/JetBrainsMono.zip"
+  ZIP_FILE="JetBrainsMono.zip"
+  EXTRACT_DIR="JetBrainsMono"
+  FONT_DIR="/usr/share/fonts/$EXTRACT_DIR"
+  LOG_FILE="install_nerd_fonts.log"
+
+  # Logging function
+  log() {
+    echo "$(date +"%Y-%m-%d %T") - $1" | tee -a $LOG_FILE
+  }
+
+  # Start installation
+  log "Starting installation of Nerd Fonts"
+
+  # Download the ZIP file
+  log "Downloading $URL"
+  wget -O $ZIP_FILE $URL
+  if [ $? -ne 0 ]; then
+    log "Failed to download $URL"
+    exit 1
+  fi
+
+  # Extract the ZIP file
+  log "Extracting $ZIP_FILE"
+  unzip $ZIP_FILE -d $EXTRACT_DIR
+  if [ $? -ne 0 ]; then
+    log "Failed to extract $ZIP_FILE"
+    exit 1
+  fi
+
+  # Check if destination directory exists, if not, create it
+  if [ ! -d "$FONT_DIR" ]; then
+    log "Destination directory $FONT_DIR does not exist. Creating it."
+    mkdir -p $FONT_DIR
+    if [ $? -ne 0 ]; then
+      log "Failed to create directory $FONT_DIR"
+      exit 1
+    fi
+  fi
+
+  # Copy the extracted files to the destination directory
+  log "Copying extracted files to $FONT_DIR"
+  cp -r $EXTRACT_DIR/* $FONT_DIR
+  if [ $? -ne 0 ]; then
+    log "Failed to copy extracted files to $FONT_DIR"
+    exit 1
+  fi
+
+  # Change the ownership to root
+  log "Changing ownership of $FONT_DIR to root"
+  chown -R root: $FONT_DIR
+  if [ $? -ne 0 ]; then
+    log "Failed to change ownership of $FONT_DIR"
+    exit 1
+  fi
+
+  # Change the permissions to 644 for files
+  log "Changing permissions of files in $FONT_DIR to 644"
+  find $FONT_DIR -type f -exec chmod 644 {} \;
+  if [ $? -ne 0 ]; then
+    log "Failed to change file permissions in $FONT_DIR"
+    exit 1
+  fi
+
+  # Apply restorecon to the folder
+  log "Applying restorecon to $FONT_DIR"
+  restorecon -vFr $FONT_DIR
+  if [ $? -ne 0 ]; then
+    log "Failed to apply restorecon to $FONT_DIR"
+    exit 1
+  fi
+
+  # Clean up
+  log "Cleaning up"
+  rm -rf $ZIP_FILE $EXTRACT_DIR
+  if [ $? -ne 0 ]; then
+    log "Failed to remove $ZIP_FILE or $EXTRACT_DIR"
+    exit 1
+  fi
+    sleep 20
+  log "Installation of Nerd Fonts completed successfully"
+}
+
+#This Function Installs Microsoft core Fonts
+install_microsoft_core_fonts() {
+  # Update and install necessary packages
+  sudo dnf upgrade --refresh -y
+  sudo dnf install curl cabextract xorg-x11-font-utils fontconfig -y
+  # Install Microsoft Core Fonts
+  
+  sudo rpm -i https://downloads.sourceforge.net/project/mscorefonts2/rpms/msttcore-fonts-installer-2.6-1.noarch.rpm
+  echo "Installation of Microsoft Core Fonts completed successfully"
+}
+
+# This Function set all .sh files as executable
+execsh(){
+    # Iterate over all .sh files in the current directory
+    for file in *.sh; do
+    if [ -f "$file" ]; then
+        # Add executable permission
+        chmod +x "$file"
+    fi
+    echo "files mark as execuctable"
+done
+}

@@ -1,0 +1,549 @@
+#!/bin/bash
+#----------------------------------------------------------------------------------#
+#               This script holds Functions for main Script file                   #
+#               *. download                                                        #
+#               *. install_looking_glass_client                                    #
+#               *. install_virtualization                                          #
+#               *. ask_yes_no                                                      #
+#               *. configure_system                                                #
+#               *. configure_intel_iommu                                           #
+#               *. select_device                                                   #
+#               *. configure_amd_iommu                                             #
+#               *. DETECT_CPU                                                      #
+#               *. IOMMU_SETUP                                                     #
+#               *. enable_intel_gvt_service                                        #
+#               *. VIRTMAN                                                         #
+#               *. virtman_noroot                                                  #
+#----------------------------------------------------------------------------------#
+
+
+# This Function downloads the looking-glass tar file
+download() {
+    filename="looking-glass-B6.tar.gz"
+    url1="https://looking-glass.io/artifact/stable/source/"
+    USER1=$(logname)
+
+    # Function to detect available browser
+    detect_browser() {
+        if command -v chromium-browser &> /dev/null; then
+            echo "chromium-browser"
+        elif command -v google-chrome &> /dev/null; then
+            echo "google-chrome"
+        elif command -v firefox &> /dev/null; then
+            echo "firefox"
+        else
+            echo "none"
+        fi
+    }
+
+    browser=$(detect_browser)
+
+    if [[ "$browser" == "none" ]]; then
+        echo "No supported browsers found. Please install Chromium, Google Chrome, or Firefox."
+        exit 1
+    fi
+
+    if [[ -f "$filename" ]]; then
+        echo "File exists"
+    else
+        echo "Downloading $filename using $browser..."
+
+        # Open the URL in the default web browser as the normal user
+        runuser -u $USER1 -- $browser "$url1" &> /dev/null &
+
+        # Wait for the browser to open and download the file
+        sleep 5
+        
+        # Use xdotool to simulate the download action if needed (depends on the website behavior)
+        # Example for Firefox:
+        if [[ "$browser" == "firefox" ]]; then
+            window_id=$(xdotool search --onlyvisible --name "Mozilla Firefox")
+            xdotool windowactivate $window_id
+            xdotool key --delay 200 Return
+        fi
+
+        # Wait for the user to download the file
+        while [ ! -f "/home/$USER1/Downloads/$filename" ]; do
+            echo "Waiting for $filename to be downloaded..."
+            sleep 5
+        done
+
+        echo "$filename found in Downloads directory."
+        echo "Moving $filename to the current directory..."
+        mv "/home/$USER1/Downloads/$filename" .
+
+        if [[ -f "$filename" ]]; then
+            echo "$filename moved successfully."
+        else
+            echo "Failed to move $filename."
+        fi
+    fi
+}
+
+# Downloads and Builds and Installs Looking-glass-client and set permisions 
+install_looking_glass_client() {
+            #Runs download Function to get the tar file
+            download
+
+            #Build and Install the Looking-Glass-Client
+            dnf install cmake gcc gcc-c++ libglvnd-devel fontconfig-devel spice-protocol make nettle-devel \
+            pkgconf-pkg-config binutils-devel libXi-devel libXinerama-devel libXcursor-devel \
+            libXpresent-devel libxkbcommon-x11-devel wayland-devel wayland-protocols-devel \
+            libXScrnSaver-devel libXrandr-devel dejavu-sans-mono-fonts libdecor-devel pipewire-devel libsamplerate-devel pulseaudio-libs-devel libsamplerate-devel -y
+            tar -xvzf looking-glass-B6.tar.gz
+            dir1=$(pwd)
+            cd looking-glass-B6
+            mkdir client/build
+            cd client/build
+            cmake ..
+            make install
+            cd $dir1
+            rm -rf looking-glass-B6
+            VIRT_USER=`logname`
+                   
+
+          # Prompt the user whether to manually edit the username using dialog
+            USER_YN=$(dialog --stdout --defaultno --yesno "$VIRT_USER Will be Set to use Looking glass, Do you need to manually edit the username?" 0 0)
+
+            # If the user chooses yes, prompt for a new username using dialog
+            if [ "$USER_YN" = "0" ]; then
+                USER_YN='n'
+            while [ "$USER_YN" = "n" ]; do
+                VIRT_USER=$(dialog --stdout --inputbox "Enter the new username:" 0 0)
+                USER_YN=$(dialog --stdout --yesno "Is $VIRT_USER correct?" 0 0)
+            done
+            fi
+
+            # Display the selected username
+            dialog --infobox "User $VIRT_USER  has been Selected" 0 0
+            
+                    
+            touch /dev/shm/looking-glass && chown $VIRT_USER:kvm /dev/shm/looking-glass && chmod 660 /dev/shm/looking-glass
+            shm=""
+            shm=("f /dev/shm/looking-glass 0660 $VIRT_USER kvm -")
+            echo $shm > /etc/tmpfiles.d/10-looking-glass.conf
+            
+            #Set SELINUX permisions
+            clear
+            echo "Setting SELINUX permisions"
+            ausearch -c 'qemu-system-x86' --raw | audit2allow -M my-qemusystemx86 > /dev/null
+            semodule -X 300 -i my-qemusystemx86.pp 
+            setsebool -P domain_can_mmap_files 1
+            clear
+            
+}
+
+# Main Menu to Install Virtualizaton
+install_virtualization() {
+    # Virtmanager / GPU Passthrough Menu
+
+    while true; do
+        CHOICE=$(dialog --clear \
+                --title "Virtualization" \
+                --nocancel \
+                --menu "Choose an option:" \
+                15 60 5 \
+                1 "Install Virtualization Software" \
+                2 "Enable IOMMU And Update Grub" \
+                3 "Installing Looking-Glass-Client" \
+                4 "Enabling Intel GVT Service" \
+                5 "Run Virtmanager as Non Root" \
+                B "Back" \
+                3>&1 1>&2 2>&3)
+
+        clear
+        case $CHOICE in
+            1) VIRTMAN ;;
+            2) IOMMU_SETUP ;;
+            3) install_looking_glass_client ;;
+            4) enable_intel_gvt_service ;;
+            5) virtman_noroot ;;
+            B) break ;;
+            *) echo "Invalid option. Please try again." ;;
+        esac
+    done
+}
+
+# Function to ask yes/no questions
+ask_yes_no() {
+    while true; do
+        read -p "$1 (y/n): " yn
+        case $yn in
+            [Yy]* ) return 0;;
+            [Nn]* ) return 1;;
+            * ) echo "Please answer yes (y) or no (n).";;
+        esac
+    done
+}
+
+# Function to configure the system based on user input
+configure_system() {
+    # Check if INTEL is set to 1
+    if [ "$INTEL" = "1" ]; then
+        # Ask if Intel GVT support is required
+        if ask_yes_no "Do you require Intel GVT support?"; then
+            echo "Intel GVT support will be configured."
+            # Add the code to configure Intel GVT support here
+            #sets GVT surport to yes
+            GVT="1"
+        else
+            #Sets GVT Surport to no
+            GVT="0"
+            echo "Intel GVT support will not be configured."
+        fi
+    fi
+    # Ask if user wants to passthrough a video and audio device
+    if ask_yes_no "Would you like to passthrough a video and audio device?"; then
+        echo "Video and audio passthrough will be configured."
+        # Add the code to configure video and audio passthrough here
+        # Example: echo "video_audio_passthrough_config" >> /etc/config_file
+        select_device "VGA"
+        vga_device_id="${selected_device_id}"
+        vga_device_line="${selected_device_line}"
+        # Call the function for selecting HD device
+        select_device "Audio"
+
+        # Store the selected HD device name and ID in variables
+        hd_device_id="${selected_device_id}"
+        hd_device_line="${selected_device_line}"
+
+        parsed_VIDEO=$(echo "$vga_device_id" | tr -d '[]')
+        parsed_AUDIO=$(echo "$hd_device_id" | tr -d '[]')
+
+        #echo "VGA device line: $vga_device_line"
+        #echo "HD device line: $hd_device_line"
+        echo "Selected VGA device: $parsed_VIDEO"
+        echo "Selected HD device: $parsed_AUDIO"
+        #sets passthrough to yes
+        pass="1"
+
+    else
+        echo "Video and audio passthrough will not be configured."
+        #sets passthrough to no
+        pass="0"
+    fi
+
+    # Ask if user wants to blacklist nouveau
+    if ask_yes_no "Would you like to blacklist nouveau?"; then
+        echo "Nouveau will be blacklisted."
+        # Add the code to blacklist nouveau here
+        # blacklist yes
+        Nouveau="1"
+    else
+        #blacklist no
+        Nouveau="0"
+        echo "Nouveau will not be blacklisted."
+    fi
+    
+    # Ask if user wants to blacklist nouveau
+    if ask_yes_no "Would you like to blacklist amdgpu?"; then
+        echo "Amdgpu will be blacklisted."
+        # Add the code to blacklist amdgpu here
+        # blacklist yes
+        Amdgpu="1"
+    else
+        #blacklist no
+        Amdgpu="0"
+        echo "Amdgpu will not be blacklisted."
+    fi
+
+    echo "Configuration complete."
+}
+
+# Helps Config for Intel CPU
+configure_intel_iommu() {
+    #asks what user wants to do
+    configure_system
+    # Check each variable and append corresponding strings to the result
+    IOMMU=""
+    IOMMU="intel_iommu=on"
+    if [ "$GVT" -eq 1 ]; then
+        intel1="i915.enable_gvt=1 i915.enable_guc=0"
+        IOMMU="$IOMMU $intel1"
+    fi
+
+    if [ "$pass" -eq 1 ]; then
+        intel2="pcie_aspm=off rd.driver.pre=vfio-pci vfio-pci.ids=$parsed_VIDEO,$parsed_AUDIO"
+        IOMMU="$IOMMU $intel2"
+    fi
+
+    if [ "$Nouveau" -eq 1 ]; then
+        intel3="rd.driver.blacklist=nouveau"
+        IOMMU="$IOMMU $intel3"
+    fi
+    if [ "$Amdgpu" -eq 1 ]; then
+        intel4="rd.driver.blacklist=amdgpu"
+        IOMMU="$IOMMU $intel4"
+    fi
+  
+}
+
+#get Audio and Video Passthrough ID'S
+select_device() {
+    local device_type=$1
+    local devices=$(lspci -nnk | grep -i "$device_type" | grep -oP '.*\[([0-9a-fA-F]{4}):([0-9a-fA-F]{4})\].*')
+
+    if [ -z "$devices" ]; then
+        echo "No $device_type devices found."
+        return 1
+    fi
+
+    echo "Available $device_type devices:"
+    local index=0
+    local device_ids=()
+    local device_lines=()
+    while read -r device; do
+        index=$((index+1))
+        device_id=$(echo "$device" | grep -oP '\[([0-9a-fA-F]{4}):([0-9a-fA-F]{4})\]')
+        device_ids+=("$device_id")
+        device_lines+=("$device")
+        echo "$index. $device"
+    done <<< "$devices"
+
+    read -p "Enter the number corresponding to your $device_type device: " choice
+    if ! [[ "$choice" =~ ^[0-9]+$ ]]; then
+        echo "Invalid input. Please enter a number."
+        return 1
+    fi
+
+    if [ "$choice" -lt 1 ] || [ "$choice" -gt "${#device_ids[@]}" ]; then
+        echo "Invalid selection. Please enter a valid number."
+        return 1
+    fi
+
+    selected_device_id="${device_ids[$((choice-1))]}"
+    selected_device_line="${device_lines[$((choice-1))]}"
+    clear
+ }
+
+#Helps Config IOMMU for AMD
+configure_amd_iommu() {
+   configure_system
+    # Check each variable and append corresponding strings to the result
+    IOMMU=""
+    IOMMU="amd_iommu=on"
+
+    if [ "$pass" -eq 1 ]; then
+        AMD1="pcie_aspm=off rd.driver.pre=vfio-pci vfio-pci.ids=$parsed_VIDEO,$parsed_AUDIO"
+        IOMMU="$IOMMU $AMD1"
+    fi
+
+    if [ "$Nouveau" -eq 1 ]; then
+        AMD2="rd.driver.blacklist=nouveau"
+        IOMMU="$IOMMU $AMD2"
+    fi
+    
+    if [ "$Amdgpu" -eq 1 ]; then
+        AMD3="rd.driver.blacklist=amdgpu"
+        IOMMU="$IOMMU $AMD3"
+    fi
+}
+
+#Detects AMD or INTEL
+DETECT_CPU(){
+            ####Detecting CPU
+            CPU=$(lscpu | grep GenuineIntel | rev | cut -d ' ' -f 1 | rev )
+            INTEL="0"
+            if [ "$CPU" = "GenuineIntel" ]
+	        then
+	            INTEL="1" 
+            else
+                INTEL="0"
+            fi
+}
+
+# IOMMU Setup for Intel CPU
+IOMMU_SETUP(){
+            clear
+            #asks if need to delete vfio-pci-override-vga.sh
+            if [ -e /sbin/vfio-pci-override-vga.sh ]; then 
+            read -p "Would you like to delete /sbin/vfio-pci-override-vga.sh? (y/n): " choice
+
+            # Check the user's input
+            if [[ "$choice" == "y" || "$choice" == "Y" ]]; then
+            # Attempt to delete the file
+            if rm /sbin/vfio-pci-override-vga.sh; then
+                echo "File deleted successfully."
+            else
+                echo "Failed to delete the file."
+            fi
+            else
+                echo "File deletion canceled."
+            fi
+            fi
+            check_grub_cmdline
+            ##Creating backups
+            echo  "Creating backups"
+
+            cat /etc/default/grub > grub_backup
+
+            if [ -a /etc/modprobe.d/local.conf ]
+            then 
+                mv /etc/modprobe.d/local.conf modprobe.backup
+            fi
+
+            if [ -a /etc/dracut.conf.d/local.conf ]
+	        then 
+	                mv /etc/dracut.conf.d/local.conf local.conf.backup
+            fi
+
+            cp /etc/default/grub new_grub
+            # Dectect cpu type
+            DETECT_CPU
+            if [ "$INTEL" -eq 1 ]; then
+                configure_intel_iommu
+            else
+                configure_amd_iommu
+            fi
+             #Putting together new grub string
+                OLD_OPTIONS=`cat new_grub | grep GRUB_CMDLINE_LINUX | cut -d '"' -f 1,2`
+
+                NEW_OPTIONS="$OLD_OPTIONS $IOMMU\""
+                echo $NEW_OPTIONS
+
+                #Rebuilding grub 
+                sed -i -e "s|^GRUB_CMDLINE_LINUX.*|${NEW_OPTIONS}|" new_grub
+
+                #User verification of new grub and prompt to manually edit it
+                echo 
+                echo "Grub was modified to look like this: "
+                echo `cat new_grub | grep "GRUB_CMDLINE_LINUX"`
+                echo 
+                echo "Do you want to edit it? y/n"
+                read YN
+
+                if [ $YN = y ]
+                then
+                    nano new_grub
+                fi
+
+                cp new_grub /etc/default/grub
+
+               # Check if passthrough is required
+                if [ "$pass" = "1" ]; then
+                # Copying necessary scripts
+                    echo "Getting GPU passthrough scripts ready"
+
+                    cp ./service/vfio-pci-override-vga.sh /sbin/vfio-pci-override-vga.sh
+
+                    chmod 755 /sbin/vfio-pci-override-vga.sh
+
+                    echo "install vfio-pci /sbin/vfio-pci-override-vga.sh" > /etc/modprobe.d/local.conf
+
+                    cp ./service/local.conf /etc/dracut.conf.d/local.conf
+                fi
+                
+                echo "Updating grub and generating initramfs"
+
+                grub2-mkconfig -o /boot/grub2/grub.cfg
+                grub2-mkconfig -o /boot/efi/EFI/fedora/grub.cfg
+                dracut -f --kver `uname -r`
+}
+
+#Intel GVT surport
+enable_intel_gvt_service() {
+    clear
+    echo "=========================================="
+    echo "|   Enable INTEL GVT SERVICE             |"
+    echo "=========================================="
+    modprobe kvmgt mdev vfio-iommu-type1
+    GPU=""
+    MAX=0
+    UUID=$(uuidgen)
+    VIRT_USER=$(logname)
+
+    # Finding the Intel GPU and choosing the one with the highest weight value
+    for i in $(find /sys/devices/pci* -name 'mdev_supported_types'); do
+        for y in $(find "$i" -name 'description'); do
+            WEIGHT=$(cat "$y" | tail -1 | cut -d ' ' -f 2)
+            if [ "$WEIGHT" -gt "$MAX" ]; then
+                GPU=$(echo "$y" | cut -d '/' -f 1-7)
+                MAX="$WEIGHT"
+            fi
+        done
+    done
+
+    if [ -n "$GPU" ]; then
+        echo "<hostdev mode='subsystem' type='mdev' managed='no' model='vfio-pci' display='off'>" > virsh.txt
+        echo "<source>" >> virsh.txt
+        echo "<address uuid=\"$UUID\"/>" >> virsh.txt
+        echo "</source>" >> virsh.txt
+        echo "</hostdev>" >> virsh.txt
+
+        # Initializing virtual GPU on every startup
+        echo "modprobe kvmgt mdev vfio-iommu-type1" >> ./service/gvt_pe.sh
+        echo "echo $UUID > $GPU/create" >> ./service/gvt_pe.sh
+
+        # Create a systemd service to initialize the GPU on startup
+        cp ./service/gvt_pe.service /etc/systemd/system/gvt_pe.service
+        chmod 644 /etc/systemd/system/gvt_pe.service
+
+        mv ./service/gvt_pe.sh /usr/bin/gvt_pe.sh
+        chmod +x /usr/bin/gvt_pe.sh
+        systemctl enable gvt_pe.service
+        systemctl start gvt_pe.service
+
+        chown "$VIRT_USER" virsh.txt
+    else
+        echo "No Intel GPU found with mdev_supported_types"
+    fi
+    sleep 5
+}
+
+# Install Virtualization Software
+VIRTMAN(){
+    clear
+    echo "=========================================="
+    echo "|   Installing Virtualization Software   |"
+    echo "=========================================="
+    dnf install qemu qemu-img nano -y
+    dnf groupinstall "Virtualization" -y
+}
+
+# Run Virtmanager as non root
+virtman_noroot(){
+     # Check if the file exists
+    conf_file="/etc/libvirt/libvirtd.conf"
+    if [ -f "$conf_file" ]; then
+        # Uncomment specific lines
+        sed -i '/^#unix_sock_group/s/^#//' "$conf_file"
+        sed -i '/^#unix_sock_rw_perms/s/^#//' "$conf_file"
+
+        # Verify changes
+        echo "Changes made to $conf_file:"
+        grep -E '^unix_sock_group|^unix_sock_rw_perms' "$conf_file"
+    else
+        echo "$conf_file not found."
+        return 1
+    fi
+
+   # Check if libvirt group exists
+    if ! getent group | grep -q "^libvirt:"; then
+        dialog --msgbox "libvirt group does not exist." 0 0
+        return 1
+    fi
+
+    # Check if the current user is already in the libvirt group
+    if groups "$(logname)" | grep -q '\blibvirt\b'; then
+         dialog --msgbox "Current user is already in the libvirt group." 0 0
+         return 1
+    else
+        # Add the current user to the libvirt group
+        usermod -a -G libvirt "$(logname)"
+        dialog --msgbox "Added $(logname) to the libvirt group." 0 0
+    fi
+
+    # Activate changes by switching to the libvirt group
+    newgrp libvirt
+
+    # Restart or start libvirtd service
+    if systemctl is-active --quiet libvirtd.service; then
+        echo "Restarting libvirtd service..."
+        systemctl restart libvirtd.service
+    else
+        echo "Starting libvirtd service..."
+        systemctl start libvirtd.service
+    fi
+    dialog --msgbox "Virtmnger as Non Root Active" 0 0
+    return 1
+}

@@ -1,0 +1,105 @@
+#!/bin/bash
+#----------------------------------------------------------------------------------#
+#               This script holds Functions for main Script file                   #
+#               *. install_amd_drivers                                             #
+#               *. install_intel_drivers                                           #
+#               *. install_drivers                                                 #
+#               *. install_media_codecs                                            #
+#               *. enable_flathub                                                  #
+#               *. install_google_chrome                                           #
+#----------------------------------------------------------------------------------#
+
+# Installs Mesa Freeworld Drivers 
+install_amd_drivers(){
+    dnf swap -y mesa-va-drivers mesa-va-drivers-freeworld
+    dnf swap -y mesa-vdpau-drivers mesa-vdpau-drivers-freeworld
+    dnf install -y libva-utils
+}
+
+# Installs Intel Media Driver
+install_intel_drivers(){
+    dnf install -y intel-media-driver
+    dnf install -y  libva-utils
+}
+
+# Main Function to Install Video Drivers
+install_drivers() {
+    # Check if rpmfusion-free and rpmfusion-nonfree repositories are enabled
+    free_repo=$(dnf repolist all | grep -i 'rpmfusion-free')
+    nonfree_repo=$(dnf repolist all | grep -i 'rpmfusion-nonfree')
+    
+    if [[ -n "$free_repo" && -n "$nonfree_repo" ]]; then
+     while true; do
+        CHOICE=$(dialog --clear \
+                --title "Video Drivers" \
+                --nocancel \
+                --menu "Choose an option:" \
+                15 60 3 \
+                1 "Install Mesa FreeWorld Drivers for AMD" \
+                2 "Install Intel Media Driver" \
+                3 "Exit" \
+                3>&1 1>&2 2>&3)
+
+        clear
+        case $CHOICE in
+            1) install_amd_drivers ;;
+            2) install_intel_drivers ;;
+            3) break ;;
+            *) echo "Invalid option. Please try again." ;;
+        esac
+    done
+    else
+        dialog --msgbox "Please Enable RPM Fusion First" 0 0
+        break
+    fi
+}
+
+# Install Media Codecs 
+install_media_codecs() {
+    echo "Install Media Codecs"
+    
+    free_repo=$(dnf repolist all | grep -i 'rpmfusion-free')
+    nonfree_repo=$(dnf repolist all | grep -i 'rpmfusion-nonfree')
+
+    if [[ -n "$free_repo" && -n "$nonfree_repo" ]]; then
+        dnf update -y
+        dnf install -y gstreamer1-plugins-{bad-\*,good-\*,base} gstreamer1-plugin-openh264 gstreamer1-libav --exclude=gstreamer1-plugins-bad-free-devel
+        dnf install -y lame* --exclude=lame-devel
+        dnf group upgrade -y --with-optional Multimedia
+    else
+        dialog --msgbox "Please Enable RPM Fusion First" 0 0
+        break
+    fi
+}
+
+# Installs Flatpak and Enables Flathub
+enable_flathub() {
+    # Check if flatpak is installed
+    if ! command -v flatpak &> /dev/null; then
+        echo "Flatpak is not installed. Installing flatpak..."
+        
+        # Install flatpak using dnf
+        sudo dnf install -y flatpak
+        if [[ $? -ne 0 ]]; then
+            echo "Failed to install flatpak. Please check your package manager."
+            return 1
+        fi
+    fi
+
+    # Add the Flathub repository
+    flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+    if [[ $? -eq 0 ]]; then
+        dialog --msgbox "Flathub Enabled" 0 0
+    else
+        dialog --msgbox "Failed to add Flathub repository." 0 0
+        return 1
+    fi
+}
+
+# Installs Google Chrome repo and Installs Google Chrome
+install_google_chrome() {
+    dnf install -y fedora-workstation-repositories
+    dnf config-manager --set-enabled google-chrome
+    dnf -y install google-chrome-stable
+    dialog --msgbox "Google Chrome Installed" 0 0
+}
