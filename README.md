@@ -39,7 +39,7 @@ The Fedora Post Install Script offers a wide range of functionalities to enhance
 
 - **Additional Utilities:**
   - Downloads, builds, and installs the Looking Glass Client for desktop streaming in virtualized environments.
-
+  - Download and install msfonts , Jetbrains mono font 
 ## Compatibility
 This script is compatible with:
 - Fedora 40 KDE
