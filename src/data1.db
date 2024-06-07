@@ -1,15 +1,26 @@
 #!/bin/bash
-#----------------------------------------------------------------------------------#
-#               This script holds Functions for main Script file                   #
-#               *. fix_and_clean_dnf                                               #
-#               *. check_firmware_update                                           #
-#               *. install_rpm_fusion                                              #
-#               *. install_microsoft_core_fonts                                    #
-#               *. install_nerd_fonts                                              #
-#               *. execsh                                                          #
-#----------------------------------------------------------------------------------#
-
-
+#-------------------------------------------------------------------------------------#
+# Fedora Post-Installation Script                                                     #
+# This script automates the configuration and installation of various software        #
+# components on a Fedora system. It includes functions for system updates,            #
+# firmware checks, and installations of essential fonts and repositories.             #
+#                                                                                     #
+# Functions:                                                                          #
+#   - fix_and_clean_dnf: Optimizes and updates DNF package manager settings.          #
+#   - check_firmware_update: Checks and applies firmware updates.                     #
+#   - install_rpm_fusion: Adds RPM Fusion repositories and installs related packages. #
+#   - install_microsoft_core_fonts: Installs Microsoft core fonts.                    #
+#   - install_nerd_fonts: Installs JetBrains Mono Nerd Font.                          #
+#   - execsh: Sets executable permissions on shell scripts in the current directory.  #
+#                                                                                     #
+# Usage:                                                                              #
+#   Run the script with root privileges to ensure it can perform system-level         #
+#   modifications. For example, use 'sudo ./main.sh'.                                 #
+#                                                                                     #
+# Prerequisites:                                                                      #
+#   - The script assumes a Fedora system with DNF and fwupdmgr installed.             #
+#   - Internet connection is required for downloading packages and updates.           #
+#-------------------------------------------------------------------------------------#
 
 
 # does DNF upgrade and performs a dnf clean updates dnf conf

@@ -1,12 +1,25 @@
 #!/bin/bash
 #----------------------------------------------------------------------------------#
-#               This script holds Functions for main Script file                   #
-#               *. check_grub_cmdline                                              #
-#               *. update_grub_timeout                                             #
-#               *. FIX_GRUB                                                        #
-#               *. fedora_theme_fix                                                #
-#               *. CH_HOSTNAME                                                     #
-#               *. FIX_KDE_SPLASH                                                  #
+# Fedora Post-Installation Script for GRUB and Theme Configuration                 #
+# This script provides utilities to configure GRUB settings and apply theme fixes  #
+# for a Fedora system. It includes functions to modify GRUB command lines, update  #
+# GRUB timeout, fix GRUB themes, and manage KDE splash screens.                    #
+#                                                                                  #
+# Functions:                                                                       #
+#   - check_grub_cmdline: Edits GRUB command line settings.                        #
+#   - update_grub_timeout: Updates the GRUB boot loader timeout.                   #
+#   - FIX_GRUB: Applies theme and graphical settings to GRUB.                      #
+#   - fedora_theme_fix: Provides a menu for various theme fixes.                   #
+#   - CH_HOSTNAME: Changes the system hostname.                                    #
+#   - FIX_KDE_SPLASH: Applies a Fedora theme splash screen to KDE.                 #
+#                                                                                  #
+# Usage:                                                                           #
+#   Run the script with root privileges to ensure it can perform system-level      #
+#   modifications. For example, use 'sudo ./main.sh'.                             #
+#                                                                                  #
+# Prerequisites:                                                                   #
+#   - The script assumes a Fedora system with GRUB and KDE installed.              #
+#   - Dialog and sed utilities are required.                                       #
 #----------------------------------------------------------------------------------#
 
 # Edits Grub 

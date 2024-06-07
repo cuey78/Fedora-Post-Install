@@ -1,13 +1,26 @@
 #!/bin/bash
-#----------------------------------------------------------------------------------#
-#               This script holds Functions for main Script file                   #
-#               *. install_amd_drivers                                             #
-#               *. install_intel_drivers                                           #
-#               *. install_drivers                                                 #
-#               *. install_media_codecs                                            #
-#               *. enable_flathub                                                  #
-#               *. install_google_chrome                                           #
-#----------------------------------------------------------------------------------#
+#-------------------------------------------------------------------------------------#
+# Fedora Post-Installation Utility Script                                             #
+# This script facilitates the installation and configuration of various drivers,      #
+# codecs, and applications on a Fedora system. It includes functions to install       #
+# AMD and Intel drivers, media codecs, Flatpak, and Google Chrome.                    #
+#                                                                                     #
+# Functions:                                                                          #
+#   - install_amd_drivers: Installs AMD Mesa Freeworld Drivers.                       #
+#   - install_intel_drivers: Installs Intel Media Drivers.                            #
+#   - install_drivers: Provides a menu to install video drivers based on user choice. #
+#   - install_media_codecs: Installs essential media codecs for multimedia playback.  #
+#   - enable_flathub: Adds the Flathub repository and installs Flatpak.               #
+#   - install_google_chrome: Installs Google Chrome browser.                          #
+#                                                                                     #
+# Usage:                                                                              #
+#   Run the script with root privileges to ensure it can perform system-level         #
+#   modifications. For example, use 'sudo ./main.sh'.                                 #
+#                                                                                     #
+# Prerequisites:                                                                      #
+#   - The script assumes a Fedora system with DNF installed.                          #
+#   - Internet connection is required for downloading packages and updates.           #
+#-------------------------------------------------------------------------------------#
 
 # Installs Mesa Freeworld Drivers 
 install_amd_drivers(){

@@ -1,12 +1,25 @@
 #!/bin/bash
 #----------------------------------------------------------------------------------#
-#               This script holds Functions for main Script file                   #
-#               *. setup_wifi_nfs_shares                                           #
-#               *. update_nfs_script                                               #
-#               *. wifi_nfs_shares                                                 #
-#               *. nfs_shares_via_fstab                                            #
-#               *. install_nerd_fonts                                              #
-#               *. nfs_setu                                                        #
+# Fedora Post-Installation Network and Font Configuration Script                   #
+# This script assists in setting up Wi-Fi and NFS shares, and installing Nerd Fonts#
+# on a Fedora system. It includes functions to manage Wi-Fi connections, update NFS#
+# scripts, and install fonts, enhancing both connectivity and visual customization.#
+#                                                                                  #
+# Functions:                                                                       #
+#   - setup_wifi_nfs_shares: Scans and connects to Wi-Fi networks, sets up NFS.    #
+#   - update_nfs_script: Updates NFS configuration scripts based on user input.    #
+#   - wifi_nfs_shares: Main function to handle Wi-Fi and NFS shares setup.         #
+#   - nfs_shares_via_fstab: Sets up NFS shares using fstab for wired connections.  #
+#   - install_nerd_fonts: Downloads and installs Nerd Fonts.                       #
+#   - nfs_setup: Provides a menu to choose between Wi-Fi or wired NFS setup.       #
+#                                                                                  #
+# Usage:                                                                           #
+#   Run the script with root privileges to ensure it can perform system-level      #
+#   modifications. For example, use 'sudo ./main.sh'.                              #
+#                                                                                  #
+# Prerequisites:                                                                   #
+#   - The script assumes a Fedora system with network manager and systemd.         #
+#   - Internet connection is required for downloading fonts and updating NFS.      #
 #----------------------------------------------------------------------------------#
 
 #Scans for Wifi Networks

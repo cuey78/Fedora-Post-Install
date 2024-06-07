@@ -1,20 +1,27 @@
 #!/bin/bash
-#----------------------------------------------------------------------------------#
-#               This script holds Functions for main Script file                   #
-#               *. download                                                        #
-#               *. install_looking_glass_client                                    #
-#               *. install_virtualization                                          #
-#               *. ask_yes_no                                                      #
-#               *. configure_system                                                #
-#               *. configure_intel_iommu                                           #
-#               *. select_device                                                   #
-#               *. configure_amd_iommu                                             #
-#               *. DETECT_CPU                                                      #
-#               *. IOMMU_SETUP                                                     #
-#               *. enable_intel_gvt_service                                        #
-#               *. VIRTMAN                                                         #
-#               *. virtman_noroot                                                  #
-#----------------------------------------------------------------------------------#
+#-------------------------------------------------------------------------------------#
+# Fedora Post-Installation Configuration Script                                       #
+# This script assists in setting up virtualization environments and related           #
+# configurations on a Fedora system. It includes functions for installing             #
+# Looking Glass, configuring IOMMU, and setting up virtualization software.           #
+#                                                                                     #
+# Functions:                                                                          #
+#   - download: Downloads the Looking Glass client.                                   #
+#   - install_looking_glass_client: Installs and configures the Looking Glass client. #
+#   - install_virtualization: Provides a menu for virtualization-related settings.    #
+#   - configure_system: Configures system settings based on user input.               #
+#   - configure_intel_iommu: Sets up Intel IOMMU.                                     #
+#   - configure_amd_iommu: Sets up AMD IOMMU.                                         #
+#   - enable_intel_gvt_service: Enables Intel GVT service for virtualization.         #
+#                                                                                     #
+# Usage:                                                                              #
+#   Run the script with root privileges to ensure it can perform system-level         #
+#   modifications. For example, use 'sudo ./main.sh'.                                 #
+#                                                                                     #
+# Prerequisites:                                                                      #
+#   - The script assumes a Fedora system with necessary virtualization capabilities.  #
+#   - Internet connection is required for downloading packages and updates.           #
+#-------------------------------------------------------------------------------------#
 
 
 # This Function downloads the looking-glass tar file
