@@ -83,17 +83,15 @@ CHOICE_HEIGHT=11
 TITLE="Fedora Post Install Script"
 MENU="Please Choose one of the following options:"
 
-# Check for dialog installation
-if ! rpm -q dialog &>/dev/null; then
-    sudo dnf install -y dialog || { log_action "Failed to install dialog. Exiting."; exit 1; }
-    log_action "Installed dialog."
-fi
 
-# Check for xdotool installation used for downloading using browser
-if ! rpm -q xdotool &>/dev/null; then
-    sudo dnf install -y xdotool || { log_action "Failed to install xdotool. Exiting."; exit 1; }
-    log_action "Installed xdotool."
-fi
+# Check for necessary packages and install if missing
+check_and_install_package() {
+    local package=$1
+    if ! rpm -q $package &>/dev/null; then
+        sudo dnf install -y $package || { echo "Failed to install $package. Exiting."; exit 1; }
+        echo "Installed $package."
+    fi
+}
 
 # Function to display notifications
 notify() {
@@ -173,6 +171,13 @@ menu(){
         esac
     done
 }
+
+# Start of the script
+
+#Install dependencies
+check_and_install_package dialog
+check_and_install_package xdotool
+
 #show Banner
 banner
 #sleep for 2
