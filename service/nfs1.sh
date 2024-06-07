@@ -1,5 +1,5 @@
 #!/bin/bash
-num_shares="2"
+num_shares=""
 WIFI_SSID=""
 REMOTE_SERVER=""
 REMOTESHARE_1=""
