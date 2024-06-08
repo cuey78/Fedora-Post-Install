@@ -24,10 +24,11 @@
 #-------------------------------------------------------------------------------------#
 
 
-# This Function downloads the looking-glass tar file
+# This function is responsible for downloading the Looking Glass client tar file from a specified URL.
+# Example usage: download "looking-glass-client-B4.tar.gz" "https://looking-glass.io/downloads"
 download() {
-    filename="looking-glass-B6.tar.gz"
-    url1="https://looking-glass.io/artifact/stable/source/"
+    filename="$1"
+    url1="$2"
     USER1=$(logname)
 
     # Function to detect available browser
@@ -90,7 +91,7 @@ download() {
 # Downloads and Builds and Installs Looking-glass-client and set permisions 
 install_looking_glass_client() {
             #Runs download Function to get the tar file
-            download
+            download "looking-glass-B6.tar.gz" "https://looking-glass.io/artifact/stable/source/"
 
             #Build and Install the Looking-Glass-Client
             dnf install cmake gcc gcc-c++ libglvnd-devel fontconfig-devel spice-protocol make nettle-devel \
@@ -134,8 +135,8 @@ install_looking_glass_client() {
             clear
             echo "Setting SELINUX permisions"
             ausearch -c 'qemu-system-x86' --raw | audit2allow -M my-qemusystemx86 > /dev/null
-            semodule -X 300 -i my-qemusystemx86.pp 
-            setsebool -P domain_can_mmap_files 1
+            semodule -X 300 -i my-qemusystemx86.pp >/dev/null
+            setsebool -P domain_can_mmap_files 1 >/dev/null
             clear
             
 }
@@ -441,9 +442,10 @@ IOMMU_SETUP(){
                 fi
                 
                 echo "Updating grub and generating initramfs"
+                
+                #update grub
+                update_grub_config
 
-                grub2-mkconfig -o /boot/grub2/grub.cfg
-                grub2-mkconfig -o /boot/efi/EFI/fedora/grub.cfg
                 dracut -f --kver `uname -r`
 }
 
