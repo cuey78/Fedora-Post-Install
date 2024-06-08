@@ -1,28 +1,29 @@
 #!/bin/bash
-#----------------------------------------------------------------------------------#
-# Fedora Post-Installation Script for GRUB and Theme Configuration                 #
-# This script provides utilities to configure GRUB settings and apply theme fixes  #
-# for a Fedora system. It includes functions to modify GRUB command lines, update  #
-# GRUB timeout, fix GRUB themes, and manage KDE splash screens.                    #
-#                                                                                  #
-# Functions:                                                                       #
-#   - check_grub_cmdline: Edits GRUB command line settings.                        #
-#   - update_grub_timeout: Updates the GRUB boot loader timeout.                   #
-#   - FIX_GRUB: Applies theme and graphical settings to GRUB.                      #
-#   - fedora_theme_fix: Provides a menu for various theme fixes.                   #
-#   - CH_HOSTNAME: Changes the system hostname.                                    #
-#   - FIX_KDE_SPLASH: Applies a Fedora theme splash screen to KDE.                 #
-#                                                                                  #
-# Usage:                                                                           #
-#   Run the script with root privileges to ensure it can perform system-level      #
-#   modifications. For example, use 'sudo ./main.sh'.                             #
-#                                                                                  #
-# Prerequisites:                                                                   #
-#   - The script assumes a Fedora system with GRUB and KDE installed.              #
-#   - Dialog and sed utilities are required.                                       #
-#----------------------------------------------------------------------------------#
+#---------------------------------------------------------------------------------------#
+# Fedora Post-Installation Script for GRUB and Theme Configuration                      #
+# This script provides utilities to configure GRUB settings and apply theme fixes       #
+# for a Fedora system. It includes functions to modify GRUB command lines, update       #
+# GRUB timeout, fix GRUB themes, and manage KDE splash screens.                         #
+#                                                                                       #
+# Functions:                                                                            #
+#   - check_grub_cmdline: Edits GRUB command line settings.                             #
+#   - update_grub_timeout: Updates the GRUB boot loader timeout.                        #
+#   - update_grub_config: Updates the GRUB configuration for both BIOS and UEFI systems.#
+#   - FIX_GRUB: Applies theme and graphical settings to GRUB.                           #
+#   - fedora_theme_fix: Provides a menu for various theme fixes.                        #
+#   - CH_HOSTNAME: Changes the system hostname.                                         #
+#   - FIX_KDE_SPLASH: Applies a Fedora theme splash screen to KDE.                      #
+#                                                                                       #
+# Usage:                                                                                #
+#   Run the script with root privileges to ensure it can perform system-level           #
+#   modifications. For example, use 'sudo ./main.sh'.                                   #
+#                                                                                       #
+# Prerequisites:                                                                        #
+#   - The script assumes a Fedora system with GRUB and KDE installed.                   #
+#   - Dialog and sed utilities are required.                                            #
+#---------------------------------------------------------------------------------------#
 
-# Edits Grub 
+# This function checks and modifies the GRUB command line settings.
 check_grub_cmdline() {
     # Read the current GRUB_CMDLINE_LINUX line from /etc/default/grub
     current_line=$(grep "^GRUB_CMDLINE_LINUX=" /etc/default/grub)
@@ -78,57 +79,81 @@ update_grub_timeout() {
         dialog --msgbox "GRUB_TIMEOUT set to ${new_timeout} in ${grub_file}\n\nGRUB configuration updated." 8 50
         clear
         # Update GRUB configuration
-        grub2-mkconfig -o /boot/grub2/grub.cfg
-        grub2-mkconfig -o /boot/efi/EFI/fedora/grub.cfg
+        update_grub_config
     else
         dialog --msgbox "Error: Please enter a valid non-negative integer." 8 50
     fi
 }
 
+# This function updates the GRUB configuration for both BIOS and UEFI systems.
+# It uses grub2-mkconfig to generate the configuration files.
+# If the generation fails, it will return an error and stop the process.
+# End Generation Here
+update_grub_config() {
+    grub2-mkconfig -o /boot/grub2/grub.cfg
+    if [ $? -ne 0 ]; then
+        echo "Failed to update GRUB configuration for BIOS."
+        return 1
+    fi
+
+    grub2-mkconfig -o /boot/efi/EFI/fedora/grub.cfg
+    if [ $? -ne 0 ]; then
+        echo "Failed to update GRUB configuration for UEFI."
+        return 1
+    fi
+
+    echo "GRUB configuration updated successfully."
+}
+
 # Adds theme and options
 FIX_GRUB(){
-    # Fix Fedora Grub Boot Screen
-    GRUB_FILE="/etc/default/grub"
-    SEARCH_LINE='GRUB_TERMINAL_OUTPUT="console"'
-    COMMENTED_LINE='#GRUB_TERMINAL_OUTPUT="console"'
-    THEME_LINE='GRUB_THEME="/boot/grub2/theme/fedora/theme.txt"'
-    GFXMODE_LINE='GRUB_GFXMODE=1920x1080,auto'
+    # Define the GRUB configuration file path
+    local GRUB_FILE="/etc/default/grub"
+    # Define the backup file path for the GRUB configuration
+    local BACKUP_FILE="${GRUB_FILE}.bak"
+    # Define the directory path for the GRUB theme
+    local THEME_DIR="/boot/grub2/themes/fedora"
+    # Define the theme file path
+    local THEME_FILE="${THEME_DIR}/theme.txt"
+    # Define the graphics mode setting
+    local GFXMODE="1920x1080,auto"
 
-    # Check if the GRUB file exists
+    # Check if the GRUB configuration file exists
+    echo "Checking GRUB configuration file..."
     if [[ ! -f "$GRUB_FILE" ]]; then
         echo "Error: $GRUB_FILE does not exist."
         return 1
     fi
 
-    # Use sed to comment out the search line and add the theme line and gfxmode line
-    if grep -q "^$SEARCH_LINE" "$GRUB_FILE"; then
-        # Create a backup of the original file
-        cp "$GRUB_FILE" "${GRUB_FILE}.bak"
-    
-        # Use sed to perform the required changes
-        sed -i "s|^$SEARCH_LINE|$COMMENTED_LINE\n$GFXMODE_LINE\n$THEME_LINE|" "$GRUB_FILE"
-        echo "Updated $GRUB_FILE successfully."
-    else
-        echo "Line $SEARCH_LINE not found in $GRUB_FILE."
-        return 1
-    fi
+    # Create a backup of the original GRUB configuration file
+    echo "Creating backup of the original GRUB file..."
+    cp "$GRUB_FILE" "$BACKUP_FILE" || { echo "Failed to create backup."; return 1; }
 
-    # Source and destination directories
-    SOURCE_DIR="theme"
-    DEST_DIR="/boot/grub2/theme"
+    # Remove existing configurations related to terminal output, theme, and graphics mode
+    echo "Cleaning up existing configurations..."
+    sed -i "/GRUB_TERMINAL_OUTPUT=/d; /GRUB_THEME=/d; /GRUB_GFXMODE=/d" "$GRUB_FILE"
 
-    # Create the destination directory if it does not exist
-    su -c "mkdir -p $DEST_DIR" root
+    # Append new configurations for terminal output, graphics mode, and theme
+    echo "Appending new configurations..."
+    {
+        echo '#GRUB_TERMINAL_OUTPUT="console"'
+        echo "GRUB_GFXMODE=$GFXMODE"
+        echo "GRUB_THEME=\"$THEME_FILE\""
+    } >> "$GRUB_FILE"
 
-    # Copy the directory and all its contents
-    su -c "cp -r \"$SOURCE_DIR\"/* \"$DEST_DIR\"" root
-    echo "Directory $SOURCE_DIR copied to $DEST_DIR successfully."
-    sleep 5
+    # Ensure the theme directory exists and create it if it doesn't
+    echo "Ensuring theme directory exists..."
+    mkdir -p "$THEME_DIR" || { echo "Failed to create theme directory."; return 1; }
 
-    # Update grub configuration
-    grub2-mkconfig -o /boot/grub2/grub.cfg
-    grub2-mkconfig -o /boot/efi/EFI/fedora/grub.cfg
+    # Copy theme files to the theme directory
+    echo "Copying theme files..."
+    cp -r theme/* "$THEME_DIR" || { echo "Failed to copy theme files."; return 1; }
+
+    # Update the GRUB configuration to apply changes
+    echo "Updating GRUB configuration..."
+    update_grub_config
 }
+
 # Main Function for Theme Fixs
 fedora_theme_fix() {
   while true; do
@@ -177,7 +202,7 @@ CH_HOSTNAME() {
         dialog --msgbox "Hostname not set or input cancelled" 0 0
     fi
 }
-#tar -xzf ./splash/FedoraMinimal.tar.gz 
+
 #Applys a Fedora theme Splash Screen to KDE
 FIX_KDE_SPLASH(){
             #Fixs Fedora KDE Default Splash Screen to Match Fedora Logo
@@ -227,9 +252,8 @@ FIX_KDE_SPLASH(){
             # set permissions on config
             chown $USER2:$USER2 $FILE
             # Print a success message
-            echo "Fedora KDE Splash Screen Theme Fixed."
-           
-            # Pause to give user time to read the final message
-            sleep 5
-             rm -rf ./splash/FedoraMinimal
+            dialog --msgbox "The Fedora KDE splash screen theme has been successfully applied." 0 0 
+            
+            #clean uo
+            rm -rf ./splash/FedoraMinimal
 }
