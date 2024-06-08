@@ -215,8 +215,8 @@ check_and_install_package xdotool
 
 # Display the initial banner
 banner
-# Pause execution for 2 seconds to allow banner visibility
-sleep 2
+# Pause execution for .5 seconds to allow banner visibility
+sleep .5
 # Load additional script functions
 source_function_scripts
 # Verify that all necessary functions are correctly imported
