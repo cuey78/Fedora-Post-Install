@@ -540,6 +540,7 @@ virtman_noroot(){
         # Add the current user to the libvirt group
         usermod -a -G libvirt "$(logname)"
         dialog --msgbox "Added $(logname) to the libvirt group." 0 0
+        return 1
     fi
 
     # Activate changes by switching to the libvirt group
