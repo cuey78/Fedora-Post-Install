@@ -51,16 +51,34 @@ fi
 
 # This Function performs a firmware update and upgrade if needed
 check_firmware_update() {
-    echo "Check for Firmware update"
-    
-    if command -v fwupdmgr >/dev/null 2>&1; then
-       fwupdmgr get-devices
-       fwupdmgr refresh --force
-       fwupdmgr get-updates -y && fwupdmgr update -y
+    echo "Checking for Firmware updates..."
+
+    # Ensure fwupdmgr is available
+    if ! command -v fwupdmgr >/dev/null 2>&1; then
+        echo "fwupdmgr is not installed. Please install it first."
+        exit 1
     fi
-    echo "Press any Key"
-    read
+
+    # Refresh the firmware metadata
+    fwupdmgr refresh --force
+
+    # Get available updates
+    fw_update_result=$(fwupdmgr get-updates)
+
+    # Check if there are updates available
+    if echo "$fw_update_result" | grep -q "No upgrades for"; then
+        update_status="No firmware update available."
+    elif echo "$fw_update_result" | grep -q "Upgrade available"; then
+        # Perform the firmware update
+        fwupdmgr update -y
+        update_status="Firmware updated successfully."
+    else
+        update_status="No updates required."
+    fi
+
+    # Clear the screen and show the result in a dialog box
     clear
+    dialog --msgbox "$update_status Press OK to continue." 0 0
 }
 
 # This Function Install RPM Fusion Repos
