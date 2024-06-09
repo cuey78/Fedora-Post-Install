@@ -44,7 +44,7 @@ The Fedora Post Install Script offers a wide range of functionalities to enhance
 This script is compatible with:
 - Fedora 40 KDE
 - Fedora 39 and possibly earlier versions
-- GNOME desktop environment - Untested on ToDo List
+- GNOME desktop environment - Untested on the ToDo List
 
 ## Usage
 To use this script, ensure you are running it with root privileges to allow for system-level modifications. This can typically be achieved by prefixing the command with `sudo`.
