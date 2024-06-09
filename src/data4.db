@@ -112,7 +112,7 @@ FIX_GRUB(){
     # Define the backup file path for the GRUB configuration
     local BACKUP_FILE="${GRUB_FILE}.bak"
     # Define the directory path for the GRUB theme
-    local THEME_DIR="/boot/grub2/themes/fedora"
+    local THEME_DIR="/boot/grub2/theme/fedora"
     # Define the theme file path
     local THEME_FILE="${THEME_DIR}/theme.txt"
     # Define the graphics mode setting
@@ -210,7 +210,7 @@ FIX_KDE_SPLASH(){
             USER_HOME="/home/$USER2/.config"
             TAR_FILE="./splash/FedoraMinimal.tar.gz"
             SOURCE_DIR="./splash/"
-            DEST_DIR="/home/$USER2/.local/share/plasma/look-and-feel/$SOURCE_DIR"
+            DEST_DIR="/home/$USER2/.local/share/plasma/look-and-feel/"
 
             # Extract the tar.gz file
             echo "Extracting $TAR_FILE..."
@@ -255,5 +255,5 @@ FIX_KDE_SPLASH(){
             dialog --msgbox "The Fedora KDE splash screen theme has been successfully applied." 0 0 
             
             #clean uo
-            rm -rf ./splash/FedoraMinimal
+            rm /home/$USER2/.local/share/plasma/look-and-feel/FedoraMinimal.tar.gz
 }
