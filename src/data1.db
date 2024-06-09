@@ -193,6 +193,7 @@ install_microsoft_core_fonts() {
 }
 
 # This Function set all .sh files as executable
+#not used anymore marked for deletion possible but leaving here for future use
 execsh(){
     # Iterate over all .sh files in the current directory
     for file in *.sh; do
