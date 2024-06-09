@@ -23,22 +23,33 @@
 #   Run the script with root privileges to ensure proper functionality.                 #
 #   Select options from the menu to perform specific setup tasks.                       #
 #                                                                                       #
-# Author: cuey                                                                          #
+#                                                                                      #
+#  Author: cuey                                                                         #
 #                                                                                       #
+#  Example Colours                                                                      #
+#  Define color variables                                                               #
+#  RED="\033[0;31m"                                                                     #
+#  GREEN="\033[0;32m"                                                                   #
+#  YELLOW="\033[0;33m"                                                                  #
+#  BLUE="\033[0;34m"                                                                    #
+#  MAGENTA="\033[0;35m"                                                                 #
+#  CYAN="\033[0;36m"                                                                    #
+#  WHITE="\033[0;37m"                                                                   #
+#  Reset color                                                                          #
+#  RESET="\033[0m"                                                                      #
 #########################################################################################
-
 # Shows Banner on load
 banner(){
-    color1="\033[0;31m" # Red color
-    color2="\033[0;34m" # Blue color
+    local color1="\033[0;37m" # Red color
+    local color2="\033[0;34m" # Blue color
     # Reset color
-    reset_color="\033[0m"
+    local reset_color="\033[0m"
 
     clear
     # Get terminal width
-    term_width=$(tput cols)
+    local term_width=$(tput cols)
     # Calculate padding to center the banner
-    padding=$(printf '%*s' $(( (term_width - 58) / 2 )) '')
+    local padding=$(printf '%*s' $(( (term_width - 58) / 2 )) '')
 
     echo -e "${color1}${padding}######## ######## ########   #######  ########     ###"
     echo -e "${color1}${padding}##       ##       ##     ## ##     ## ##     ##   ## ##"
@@ -71,7 +82,13 @@ banner(){
 # Ensure the script runs with elevated privileges
 if [ $EUID -ne 0 ]; then
     banner
-    echo "Please run this as root!"
+    color1="\033[0;31m" # Red color
+    # Get terminal width
+    term_width=$(tput cols)
+    # Calculate padding to center the banner
+    padding=$(printf '%*s' $(( (term_width - 30) / 2 )) '')
+    echo -e "${color1}${padding}Please run this as root!"
+    echo -e "\033[0m"
     exit 1
 fi
 
@@ -153,10 +170,6 @@ check_functions() {
     done
 }
 
-# Constants for dialog dimensions
-declare -r HEIGHT=0
-declare -r WIDTH=0
-declare -r CHOICE_HEIGHT=0
 
 # Constants for titles and messages
 declare -r TITLE="Fedora Post Install Script"
@@ -165,7 +178,7 @@ declare -r MENU="Please Choose one of the following options:"
 menu() {
     # Menu options array
     local options=(
-        1 "Fix and Clean DNF Packages"
+        1 "Optimize and Update DNF Settings"
         2 "Check for Firmware Updates"
         3 "Install RPM Fusion Repositories"
         4 "Install System Drivers"
@@ -184,7 +197,7 @@ menu() {
                               --title "$TITLE" \
                               --nocancel \
                               --menu "$MENU" \
-                              $HEIGHT $WIDTH $CHOICE_HEIGHT \
+                              0 0 0 \
                               "${options[@]}" \
                               2>&1 >/dev/tty)
 
