@@ -48,13 +48,13 @@ banner(){
     echo -e "${color1}${padding}##       ##       ##     ## ##     ## ##    ##  ##     ##"
     echo -e "${color1}${padding}##       ######## ########   #######  ##     ## ##     ##"
     echo -e "${color1}${padding}"
-    echo -e "${color1}${padding}########   #######   ######  ########"
-    echo -e "${color1}${padding}##     ## ##     ## ##    ##    ##"
-    echo -e "${color1}${padding}##     ## ##     ## ##          ##"
-    echo -e "${color1}${padding}########  ##     ##  ######     ##"
-    echo -e "${color1}${padding}##        ##     ##       ##    ##"
-    echo -e "${color1}${padding}##        ##     ## ##    ##    ##"
-    echo -e "${color1}${padding}##         #######   ######     ##"
+     echo -e "${color1}${padding}         ########   #######   ######  ########"
+     echo -e "${color1}${padding}         ##     ## ##     ## ##    ##    ##"
+     echo -e "${color1}${padding}         ##     ## ##     ## ##          ##"
+     echo -e "${color1}${padding}         ########  ##     ##  ######     ##"
+     echo -e "${color1}${padding}         ##        ##     ##       ##    ##"
+     echo -e "${color1}${padding}         ##        ##     ## ##    ##    ##"
+     echo -e "${color1}${padding}         ##         #######   ######     ##"
     echo -e "${color1}${padding}"
     echo -e "${color1}${padding}#### ##    ##  ######  ########    ###    ##       ##"
     echo -e "${color1}${padding} ##  ###   ## ##    ##    ##      ## ##   ##       ##"
@@ -133,7 +133,8 @@ log_action() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') - $message" | tee -a $LOG_FILE
 }
 
-# Function to check if required functions are loaded
+# Function to verify the availability of essential functions
+# Ensures that critical functions are properly imported and available for use
 check_functions() {
     required_functions=(
         fix_and_clean_dnf
@@ -155,7 +156,7 @@ check_functions() {
 # Constants for dialog dimensions
 declare -r HEIGHT=0
 declare -r WIDTH=0
-declare -r CHOICE_HEIGHT=11
+declare -r CHOICE_HEIGHT=0
 
 # Constants for titles and messages
 declare -r TITLE="Fedora Post Install Script"
@@ -164,17 +165,17 @@ declare -r MENU="Please Choose one of the following options:"
 menu() {
     # Menu options array
     local options=(
-        1 "Fix and Clean DNF"
-        2 "Check for Firmware update"
-        3 "Install RPM Fusion"
-        4 "Install Drivers"
+        1 "Fix and Clean DNF Packages"
+        2 "Check for Firmware Updates"
+        3 "Install RPM Fusion Repositories"
+        4 "Install System Drivers"
         5 "Install Media Codecs"
-        6 "Enable Flathub"
-        7 "Install Google Chrome"
-        8 "Install Virtualization"
-        9 "NFS Shares Setup ( Wifi / Wired )"
-        10 "Extras"
-        Q "Quit"
+        6 "Enable Flathub Repository"
+        7 "Install Google Chrome Browser"
+        8 "Install Virtualization Tools"
+        9 "Setup NFS Shares (WiFi/Wired)"
+        10 "Install Additional Extras"
+        Q "Quit Script"
     )
 
     # Infinite loop for menu display and interaction
