@@ -18,8 +18,6 @@
 #   log_action - Logs actions to a file with a timestamp.                               #
 #   check_functions - Checks if required functions are defined in the environment.      #
 #   menu - Displays a menu for user interaction to select various setup options.        #
-#   FIX_GRUB - Modifies the GRUB bootloader configuration.                              #
-#   update_grub_config - Updates the GRUB configuration files for BIOS and UEFI.        #
 #                                                                                       #
 # Usage:                                                                                #
 #   Run the script with root privileges to ensure proper functionality.                 #
