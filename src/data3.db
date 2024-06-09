@@ -184,73 +184,54 @@ ask_yes_no() {
     done
 }
 
-# Function to configure the system based on user input
+# Function to configure the system based on user input using dialog
 configure_system() {
     # Check if INTEL is set to 1
     if [ "$INTEL" = "1" ]; then
-        # Ask if Intel GVT support is required
-        if ask_yes_no "Do you require Intel GVT support?"; then
+        # Ask if Intel GVT support is required using dialog
+        if dialog --title "Intel GVT Support" --yesno "Do you require Intel GVT support?" 7 60; then
             echo "Intel GVT support will be configured."
             # Add the code to configure Intel GVT support here
-            #sets GVT surport to yes
             GVT="1"
         else
-            #Sets GVT Surport to no
             GVT="0"
             echo "Intel GVT support will not be configured."
         fi
     fi
-    # Ask if user wants to passthrough a video and audio device
-    if ask_yes_no "Would you like to passthrough a video and audio device?"; then
+
+    # Ask if user wants to passthrough a video and audio device using dialog
+    if dialog --title "Device Passthrough" --yesno "Would you like to passthrough a video and audio device?" 7 60; then
         echo "Video and audio passthrough will be configured."
-        # Add the code to configure video and audio passthrough here
-        # Example: echo "video_audio_passthrough_config" >> /etc/config_file
         select_device "VGA"
         vga_device_id="${selected_device_id}"
         vga_device_line="${selected_device_line}"
-        # Call the function for selecting HD device
         select_device "Audio"
-
-        # Store the selected HD device name and ID in variables
         hd_device_id="${selected_device_id}"
         hd_device_line="${selected_device_line}"
-
         parsed_VIDEO=$(echo "$vga_device_id" | tr -d '[]')
         parsed_AUDIO=$(echo "$hd_device_id" | tr -d '[]')
-
-        #echo "VGA device line: $vga_device_line"
-        #echo "HD device line: $hd_device_line"
         echo "Selected VGA device: $parsed_VIDEO"
         echo "Selected HD device: $parsed_AUDIO"
-        #sets passthrough to yes
         pass="1"
-
     else
         echo "Video and audio passthrough will not be configured."
-        #sets passthrough to no
         pass="0"
     fi
 
-    # Ask if user wants to blacklist nouveau
-    if ask_yes_no "Would you like to blacklist nouveau?"; then
+    # Ask if user wants to blacklist nouveau using dialog
+    if dialog --title "Blacklist Nouveau" --yesno "Would you like to blacklist nouveau?" 7 60; then
         echo "Nouveau will be blacklisted."
-        # Add the code to blacklist nouveau here
-        # blacklist yes
         Nouveau="1"
     else
-        #blacklist no
         Nouveau="0"
         echo "Nouveau will not be blacklisted."
     fi
-    
-    # Ask if user wants to blacklist nouveau
-    if ask_yes_no "Would you like to blacklist amdgpu?"; then
+
+    # Ask if user wants to blacklist amdgpu using dialog
+    if dialog --title "Blacklist Amdgpu" --yesno "Would you like to blacklist amdgpu?" 7 60; then
         echo "Amdgpu will be blacklisted."
-        # Add the code to blacklist amdgpu here
-        # blacklist yes
         Amdgpu="1"
     else
-        #blacklist no
         Amdgpu="0"
         echo "Amdgpu will not be blacklisted."
     fi
@@ -292,37 +273,38 @@ select_device() {
     local devices=$(lspci -nnk | grep -i "$device_type" | grep -oP '.*\[([0-9a-fA-F]{4}):([0-9a-fA-F]{4})\].*')
 
     if [ -z "$devices" ]; then
-        echo "No $device_type devices found."
+        dialog --msgbox "No $device_type devices found." 10 50
         return 1
     fi
 
-    echo "Available $device_type devices:"
     local index=0
     local device_ids=()
     local device_lines=()
+    local device_menu=()
     while read -r device; do
         index=$((index+1))
         device_id=$(echo "$device" | grep -oP '\[([0-9a-fA-F]{4}):([0-9a-fA-F]{4})\]')
         device_ids+=("$device_id")
         device_lines+=("$device")
-        echo "$index. $device"
+        device_menu+=("$index" "$device")
     done <<< "$devices"
 
-    read -p "Enter the number corresponding to your $device_type device: " choice
+    local choice=$(dialog --title "Select $device_type Device" --menu "Choose a device:" 15 70 10 "${device_menu[@]}" 3>&1 1>&2 2>&3)
+
     if ! [[ "$choice" =~ ^[0-9]+$ ]]; then
-        echo "Invalid input. Please enter a number."
+        dialog --msgbox "Invalid input. Please enter a number." 10 50
         return 1
     fi
 
     if [ "$choice" -lt 1 ] || [ "$choice" -gt "${#device_ids[@]}" ]; then
-        echo "Invalid selection. Please enter a valid number."
+        dialog --msgbox "Invalid selection. Please enter a valid number." 10 50
         return 1
     fi
 
     selected_device_id="${device_ids[$((choice-1))]}"
     selected_device_line="${device_lines[$((choice-1))]}"
     clear
- }
+}
 
 #Helps Config IOMMU for AMD
 configure_amd_iommu() {
@@ -362,91 +344,89 @@ DETECT_CPU(){
 
 # IOMMU Setup for Intel CPU
 IOMMU_SETUP(){
-            clear
-            #asks if need to delete vfio-pci-override-vga.sh
-            if [ -e /sbin/vfio-pci-override-vga.sh ]; then 
-            read -p "Would you like to delete /sbin/vfio-pci-override-vga.sh? (y/n): " choice
-
-            # Check the user's input
-            if [[ "$choice" == "y" || "$choice" == "Y" ]]; then
+    clear
+    #asks if need to delete vfio-pci-override-vga.sh
+    if [ -e /sbin/vfio-pci-override-vga.sh ]; then 
+        if dialog --yesno "Would you like to delete /sbin/vfio-pci-override-vga.sh?" 10 50; then
             # Attempt to delete the file
             if rm /sbin/vfio-pci-override-vga.sh; then
-                echo "File deleted successfully."
+                dialog --msgbox "File deleted successfully." 10 50
             else
-                echo "Failed to delete the file."
+                dialog --msgbox "Failed to delete the file." 10 50
             fi
-            else
-                echo "File deletion canceled."
-            fi
-            fi
-            check_grub_cmdline
-            ##Creating backups
-            echo  "Creating backups"
+        else
+            dialog --msgbox "File deletion canceled." 10 50
+        fi
+    fi
+    if check_grub_cmdline = 1; then
+        return 1  # Stop current function and return to menu
+    else
+            
+    ##Creating backups
+    dialog --infobox "Creating backups" 10 50
+    sleep 2
 
-            cat /etc/default/grub > grub_backup
+    cat /etc/default/grub > grub_backup
 
-            if [ -a /etc/modprobe.d/local.conf ]
-            then 
-                mv /etc/modprobe.d/local.conf modprobe.backup
-            fi
+    if [ -a /etc/modprobe.d/local.conf ]
+    then 
+        mv /etc/modprobe.d/local.conf modprobe.backup
+    fi
 
-            if [ -a /etc/dracut.conf.d/local.conf ]
-	        then 
-	                mv /etc/dracut.conf.d/local.conf local.conf.backup
-            fi
+    if [ -a /etc/dracut.conf.d/local.conf ]
+    then 
+        mv /etc/dracut.conf.d/local.conf local.conf.backup
+    fi
 
-            cp /etc/default/grub new_grub
-            # Dectect cpu type
-            DETECT_CPU
-            if [ "$INTEL" -eq 1 ]; then
-                configure_intel_iommu
-            else
-                configure_amd_iommu
-            fi
-             #Putting together new grub string
-                OLD_OPTIONS=`cat new_grub | grep GRUB_CMDLINE_LINUX | cut -d '"' -f 1,2`
+    cp /etc/default/grub new_grub
+    # Detect cpu type
+    DETECT_CPU
+    if [ "$INTEL" -eq 1 ]; then
+        configure_intel_iommu
+    else
+        configure_amd_iommu
+    fi
+    #Putting together new grub string
+    OLD_OPTIONS=`cat new_grub | grep GRUB_CMDLINE_LINUX | cut -d '"' -f 1,2`
 
-                NEW_OPTIONS="$OLD_OPTIONS $IOMMU\""
-                echo $NEW_OPTIONS
+    NEW_OPTIONS="$OLD_OPTIONS $IOMMU\""
+    echo $NEW_OPTIONS
 
-                #Rebuilding grub 
-                sed -i -e "s|^GRUB_CMDLINE_LINUX.*|${NEW_OPTIONS}|" new_grub
+    #Rebuilding grub 
+    sed -i -e "s|^GRUB_CMDLINE_LINUX.*|${NEW_OPTIONS}|" new_grub
 
-                #User verification of new grub and prompt to manually edit it
-                echo 
-                echo "Grub was modified to look like this: "
-                echo `cat new_grub | grep "GRUB_CMDLINE_LINUX"`
-                echo 
-                echo "Do you want to edit it? y/n"
-                read YN
+    #User verification of new grub and prompt to manually edit it
+    NEW_GRUB_CONTENTS=$($new_grub)
+    
+    if dialog --yesno "Would you like to view/edit the Grub file?" 10 50; then
+        nano new_grub
+    fi
 
-                if [ $YN = y ]
-                then
-                    nano new_grub
-                fi
+    cp new_grub /etc/default/grub
 
-                cp new_grub /etc/default/grub
+    # Check if passthrough is required
+    if [ "$pass" = "1" ]; then
+        # Copying necessary scripts
+        dialog --infobox "Getting GPU passthrough scripts ready" 10 50
+        sleep 2
 
-               # Check if passthrough is required
-                if [ "$pass" = "1" ]; then
-                # Copying necessary scripts
-                    echo "Getting GPU passthrough scripts ready"
+        cp ./service/vfio-pci-override-vga.sh /sbin/vfio-pci-override-vga.sh
 
-                    cp ./service/vfio-pci-override-vga.sh /sbin/vfio-pci-override-vga.sh
+        chmod 755 /sbin/vfio-pci-override-vga.sh
 
-                    chmod 755 /sbin/vfio-pci-override-vga.sh
+        echo "install vfio-pci /sbin/vfio-pci-override-vga.sh" > /etc/modprobe.d/local.conf
 
-                    echo "install vfio-pci /sbin/vfio-pci-override-vga.sh" > /etc/modprobe.d/local.conf
+               cp ./service/local.conf /etc/dracut.conf.d/local.conf
+    fi
+    
+    dialog --infobox "Updating grub and generating initramfs" 10 50
+    sleep 2
+    
+    #update grub
+    update_grub_config &>/dev/null
 
-                    cp ./service/local.conf /etc/dracut.conf.d/local.conf
-                fi
-                
-                echo "Updating grub and generating initramfs"
-                
-                #update grub
-                update_grub_config
-
-                dracut -f --kver `uname -r`
+    dracut -f --kver `uname -r` &>/dev/null
+    fi
 }
 
 #Intel GVT surport
@@ -494,9 +474,8 @@ enable_intel_gvt_service() {
 
         chown "$VIRT_USER" virsh.txt
     else
-        echo "No Intel GPU found with mdev_supported_types"
+        dialog --msgbox "No Intel GPU found with mdev_supported_types. If you have enabled GVT in IOMMU options, please reboot first." 10 50
     fi
-    sleep 5
 }
 
 # Install Virtualization Software

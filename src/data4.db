@@ -31,27 +31,26 @@ check_grub_cmdline() {
     # Extract the content within the quotes
     current_content=$(echo "$current_line" | sed 's/GRUB_CMDLINE_LINUX="//;s/"$//')
 
-    # Show the current GRUB_CMDLINE_LINUX line
-    echo "Current GRUB_CMDLINE_LINUX line:"
-    echo "$current_line"
+    # Display current GRUB line and confirmation dialog
+    dialog --title "Current GRUB Configuration" --yesno "Current GRUB configuration is: \n\n$current_content\n\nDo you want to reset it to defaults?" 0 0
 
-    # Ask for confirmation to replace the line
-    read -p "Its best to replace it ,Do you want to replace it? (y/n): " choice
-    case "$choice" in
-        y|Y )
-            # Replace the content within the quotes
-            new_content="rhgb quiet"
-            # Replace the line in the file
-            sed -i "s/^GRUB_CMDLINE_LINUX=\"$current_content\"/GRUB_CMDLINE_LINUX=\"$new_content\"/" /etc/default/grub
-            ;;
-        n|N )
-            echo "No changes made. You Will Option to Manual Edit Latter"
-            ;;
-        * )
-            echo "Invalid choice. No changes made. ***** WARNING *****"
-            ;;
-    esac
+    # Check user response
+    response=$?
+    if [ $response -eq 0 ]; then
+        # Automatically replace the content within the quotes
+        new_content="rhgb quiet"
+        # Replace the line in the file
+        sed -i "s/^GRUB_CMDLINE_LINUX=\"$current_content\"/GRUB_CMDLINE_LINUX=\"$new_content\"/" /etc/default/grub
+        dialog --title "Update Successful" --infobox "GRUB Defaults Have been Restored" 0 0
+        sleep 2
+        return 1  # Return 1 for success
+    else
+        dialog --title "Update Cancelled" --infobox "No changes made to GRUB configuration" 0 0
+        sleep 2
+        return 0  # Return 0 for cancellation
+    fi
 }
+
 
 # Function to update GRUB_TIMEOUT in /etc/default/grub
 update_grub_timeout() {
