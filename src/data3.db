@@ -134,9 +134,9 @@ install_looking_glass_client() {
             #Set SELINUX permisions
             clear
             echo "Setting SELINUX permisions"
-            ausearch -c 'qemu-system-x86' --raw | audit2allow -M my-qemusystemx86 > /dev/null
-            semodule -X 300 -i my-qemusystemx86.pp >/dev/null
-            setsebool -P domain_can_mmap_files 1 >/dev/null
+            ausearch -c 'qemu-system-x86' --raw | audit2allow -M my-qemusystemx86 &>/dev/null
+            semodule -X 300 -i my-qemusystemx86.pp &>/dev/null
+            setsebool -P domain_can_mmap_files 1 &>/dev/null
             clear
             
 }
