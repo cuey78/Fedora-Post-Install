@@ -25,29 +25,34 @@
 #Scans for Wifi Networks
 setup_wifi_nfs_shares() {
     # Function to scan for available Wi-Fi networks and select one
-    scan_and_select_wifi() {
-        echo "Scanning for available Wi-Fi networks..."
+ scan_and_select_wifi() {
+    WIFI_SSID=""
+        dialog --infobox "Scanning for available Wi-Fi networks..." 10 50
+        sleep 0.5
         AVAILABLE_SSIDS=$(nmcli -t -f SSID dev wifi | sort -u)
 
         if [ -z "$AVAILABLE_SSIDS" ]; then
-            echo "No Wi-Fi networks found. Exiting..."
-            sleep 5
-            exit 1
+            dialog --infobox "No Wi-Fi networks found. Exiting..." 10 50
+            sleep 1
+            return 1
         fi
 
-        echo "Available Wi-Fi networks:"
-        IFS=$'\n'
-        select SSID in $AVAILABLE_SSIDS; do
-            if [ -n "$SSID" ]; then
-                WIFI_SSID="$SSID"
-                break
-            else
-                echo "Invalid selection. Please try again."
-            fi
+        # Prepare list for dialog
+        SSID_LIST=()
+        for SSID in $AVAILABLE_SSIDS; do
+            SSID_LIST+=("$SSID" "$SSID" OFF)
         done
-        unset IFS
 
-        echo "Selected Wi-Fi SSID: $WIFI_SSID"
+        WIFI_SSID=$(dialog --radiolist "Available Wi-Fi networks:" 15 50 8 "${SSID_LIST[@]}" 3>&1 1>&2 2>&3)
+
+        if [ -z "$WIFI_SSID" ]; then
+            dialog --infobox "No selection made. Exiting..." 10 50
+            sleep 0.5
+            return 1
+        else
+            dialog --infobox "Selected Wi-Fi SSID: $WIFI_SSID" 10 50
+            sleep 0.5
+        fi
     }
 
     # Function to update the nfs1.sh script
@@ -92,25 +97,34 @@ setup_wifi_nfs_shares() {
 
         # Scan and select Wi-Fi
         scan_and_select_wifi
+        if [ -n "$WIFI_SSID" ]; then
+            echo "Continuing with selected Wi-Fi SSID: $WIFI_SSID"
+        else
+            echo "No Wi-Fi SSID selected. Exiting setup..."
+            return
+        fi
 
-        # Prompt the user for the number of NFS shares to add
-        read -p "How many NFS shares would you like to add? " num_shares
-        read -p "Enter IP of Server (e.g., 10.0.0.10): " REMOTE_SERVER
+        # Prompt the user for the number of NFS shares to add using dialog
+        num_shares=$(dialog --inputbox "How many NFS shares would you like to add?" 8 40 3>&1 1>&2 2>&3)
+        # Prompt the user for the IP of the server using dialog
+        REMOTE_SERVER=$(dialog --inputbox "Enter IP of Server (e.g., 10.0.0.10):" 8 40 3>&1 1>&2 2>&3)
 
         nfs_shares=()
         mount_points=()
 
         # Loop through the number of shares and prompt the user for each share
         for (( i=1; i<=num_shares; i++ )); do
-            read -p "Enter the NFS share #$i (e.g., server:/path): " nfs_share
-            read -p "Enter the mount point #$i (e.g., /mnt/nfs): " mount_point
+            nfs_share=$(dialog --inputbox "Enter the NFS share #$i (e.g., /example/path):" 8 50 3>&1 1>&2 2>&3)
+            mount_point=$(dialog --inputbox "Enter the mount point #$i (e.g., /mnt/nfs):" 8 50 3>&1 1>&2 2>&3)
 
             # Create the mount point directory if it doesn't exist
             if [ ! -d "${mount_point}" ]; then
                 mkdir -p "${mount_point}"
-                echo "Created mount point directory ${mount_point}"
+                dialog --infobox "Created mount point directory ${mount_point}" 0 0
+                sleep 1
             else
-                echo "Mount point directory ${mount_point} already exists"
+                dialog --infobox "Mount point directory ${mount_point} already exists" 0 0
+                sleep 1
             fi
 
             nfs_shares+=("$nfs_share")
@@ -120,10 +134,11 @@ setup_wifi_nfs_shares() {
         # Update the nfs1.sh script with the new values
         update_nfs_script "$WIFI_SSID" "$REMOTE_SERVER" nfs_shares[@] mount_points[@]
 
-        echo "All specified NFS shares have been added to the nfs1.sh script."
+        dialog --infobox "All specified NFS shares have been added to the nfs script." 0 0
+        sleep 1
 
         # Message indicating that Wi-Fi shares will be active on the next reboot
-        dialog --msgbox "Wi-Fi Shares Active on Next Reboot" 0 0
+        dialog --infobox "Wi-Fi Shares Active on Next Reboot" 0 0
 
         sleep 2
         # Install Service
@@ -131,7 +146,7 @@ setup_wifi_nfs_shares() {
         cp ./service/nfs1.sh /usr/bin/
         chmod +x /usr/bin/nfs1.sh
         systemctl enable nfs-start.service
-        dialog --msgbox "Wifi Shares Active on Next Reboot" 0 0
+        
     }
 
     # Call the main function
