@@ -167,6 +167,7 @@ fedora_theme_fix() {
                 4 "Change Host Name" \
                 5 "Install Jetbrains mono font" \
                 6 "Microsoft core Fonts" \
+                7 "Install Oh My Bash" \
                 B "Back" \
                 3>&1 1>&2 2>&3)
 
@@ -178,6 +179,7 @@ fedora_theme_fix() {
             4) CH_HOSTNAME;;
             5) install_nerd_fonts;;
             6) install_microsoft_core_fonts;;
+            7) ohh_my_bash;;
             B) break ;;
             *) echo "Invalid option. Please try again." ;;
         esac

@@ -204,3 +204,15 @@ execsh(){
     echo "files mark as execuctable"
 done
 }
+
+# This Function installs Oh My Bash
+function ohh_my_bash() {
+  local USER2=$(logname)
+    # Fetch script from URL with --unattended option
+    script_url="https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh"
+    script=$(curl -fsSL $script_url)
+
+    # Execute the script with --unattended option
+    echo "$script" | runuser -u "$USER2" -- bash -c "bash -s -- --unattended"
+    dialog --msgbox "Oh My Bash installed. Please restart your terminal to apply changes." 0 0
+}
