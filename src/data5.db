@@ -47,11 +47,11 @@ setup_wifi_nfs_shares() {
 
         if [ -z "$WIFI_SSID" ]; then
             dialog --infobox "No selection made. Exiting..." 10 50
-            sleep 0.5
+            sleep 1
             return 1
         else
             dialog --infobox "Selected Wi-Fi SSID: $WIFI_SSID" 10 50
-            sleep 0.5
+            sleep 1
         fi
     }
 
@@ -104,10 +104,24 @@ setup_wifi_nfs_shares() {
             return
         fi
 
-        # Prompt the user for the number of NFS shares to add using dialog
-        num_shares=$(dialog --inputbox "How many NFS shares would you like to add?" 8 40 3>&1 1>&2 2>&3)
-        # Prompt the user for the IP of the server using dialog
-        REMOTE_SERVER=$(dialog --inputbox "Enter IP of Server (e.g., 10.0.0.10):" 8 40 3>&1 1>&2 2>&3)
+        # Prompt the user for the number of NFS shares to add using dialog and check if the input is not empty or zero
+        while true; do
+            num_shares=$(dialog --inputbox "How many NFS shares would you like to add?" 8 40 3>&1 1>&2 2>&3)
+            if [[ -z "$num_shares" || "$num_shares" -eq 0 ]]; then
+                dialog --msgbox "Please enter a valid number greater than zero." 0 0 
+            else
+                break
+            fi
+        done
+        # Prompt the user for the IP of the server using dialog and check if it is not empty
+        while true; do
+            REMOTE_SERVER=$(dialog --inputbox "Enter IP of Server (e.g., 10.0.0.10):" 8 40 3>&1 1>&2 2>&3)
+            if [ -z "$REMOTE_SERVER" ]; then
+                dialog --no-cancel --msgbox "IP address cannot be empty. Please enter a valid IP." 8 40
+            else
+                break
+            fi
+        done
 
         nfs_shares=()
         mount_points=()
@@ -172,23 +186,45 @@ nfs_shares_via_fstab() {
                 # Append the NFS entry to the end of /etc/fstab
                 echo "${nfs_share} ${mount_point} nfs ${options} 0 0" >> /etc/fstab
 
-                echo "Added ${nfs_share} to /etc/fstab"
+                dialog --infobox "Added ${nfs_share} to /etc/fstab" 5 50
+                sleep .5
             }
 
             # Prompt the user for the number of shares to add
-            read -p "How many NFS shares would you like to add? " num_shares
+            num_shares=$(dialog --inputbox "How many NFS shares would you like to add?" 8 40 3>&1 1>&2 2>&3)
+            if [[ -z "$num_shares" || "$num_shares" -eq 0 ]]; then
+                dialog --msgbox "Number of NFS shares cannot be empty or zero. Please try again." 8 40
+                return 1
+            fi
 
             for (( i=1; i<=num_shares; i++ )); do
-            # Prompt the user for the NFS share and mount point
-            read -p "Enter the NFS share #$i (e.g., server:/path): " nfs_share
-            read -p "Enter the mount point #$i (e.g., /mnt/nfs): " mount_point
+            # Prompt the user for the NFS share and mount point using dialog
+            while true; do
+                nfs_share=$(dialog --inputbox "Enter the NFS share #$i (e.g., server:/path):" 8 50 3>&1 1>&2 2>&3)
+                if [[ -z "$nfs_share" ]]; then
+                    dialog --msgbox "NFS share cannot be empty. Please try again." 8 50
+                else
+                    break
+                fi
+            done
+
+            while true; do
+                mount_point=$(dialog --inputbox "Enter the mount point #$i (e.g., /mnt/nfs):" 8 50 3>&1 1>&2 2>&3)
+                if [[ -z "$mount_point" ]]; then
+                    dialog --msgbox "Mount point cannot be empty. Please try again." 8 50
+                else
+                    break
+                fi
+            done
 
             # Create the mount point directory if it doesn't exist
             if [ ! -d "${mount_point}" ]; then
                 mkdir -p "${mount_point}"
-                echo "Created mount point directory ${mount_point}"
+                dialog --infobox "Created mount point directory ${mount_point}" 5 50
+                sleep .5
             else
-                echo "Mount point directory ${mount_point} already exists"
+                dialog --infobox "Mount point directory ${mount_point} already exists" 5 50
+                sleep .5
             fi
 
             # Add the NFS entry to /etc/fstab
@@ -198,7 +234,8 @@ nfs_shares_via_fstab() {
             # Mount all NFS shares
             mount -a
 
-            echo "All specified NFS shares have been mounted."
+            dialog --infobox "All specified NFS shares have been mounted." 5 50
+            sleep .5
 }
 
 # Main Function to Setup Shares
