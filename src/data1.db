@@ -12,7 +12,8 @@
 #   - install_microsoft_core_fonts: Installs Microsoft core fonts.                    #
 #   - install_nerd_fonts: Installs JetBrains Mono Nerd Font.                          #
 #   - execsh: Sets executable permissions on shell scripts in the current directory.  #
-#                                                                                     #
+#   - ohh_my_bash: Installs Oh My Bash, a bash environment enhancer, using an         #
+#     unattended installation method.                                                 #
 # Usage:                                                                              #
 #   Run the script with root privileges to ensure it can perform system-level         #
 #   modifications. For example, use 'sudo ./main.sh'.                                 #
