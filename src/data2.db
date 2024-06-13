@@ -116,3 +116,78 @@ install_google_chrome() {
     dnf -y install google-chrome-stable
     dialog --msgbox "Google Chrome Installed" 0 0
 }
+
+
+
+flatpak_menu() {
+    # Loop indefinitely to show the menu until the user chooses to exit
+    while true; do
+        # Display a menu using dialog and store the user's choice in the variable CHOICE
+        CHOICE=$(dialog --clear \
+                --title "Configure Flatpak and Manage Applications" \
+                --nocancel \
+                --menu "Choose an option:" \
+                15 60 3 \
+                1 "Enable Flatpak Support" \
+                2 "Install Applications via Flatpak" \
+                3 "Return to Main Menu" \
+                3>&1 1>&2 2>&3)
+
+        # Clear the screen after the dialog closes
+        clear
+        # Handle the user's choice
+        case $CHOICE in
+            1) 
+                # Option 1: Enable Flatpak through the enable_flathub function
+                enable_flathub ;;
+            2) 
+                # Option 2: Install Flatpak apps through the install_flatpaks function
+                install_flatpaks ;;
+            3) 
+                # Option 3: Exit the menu loop
+                break ;;
+            *) 
+                # Handle any other input as an invalid option
+                echo "Invalid option. Please try again." ;;
+        esac
+    done
+}
+
+
+# Function to install Flatpak apps listed in flatapps.txt
+install_flatpaks() {
+    clear
+    # Define the path to the flatapps.txt file
+    local file="./src/flatapps.txt"
+    
+    # Check if the flatapps.txt file exists
+    if [[ ! -f "$file" ]]; then
+        echo "File $file not found!"
+        sleep 2  # Pause for 2 seconds to let the user read the message
+        return 1  # Exit the function with an error status
+    fi
+
+    # Prompt the user to edit the flatapps.txt file
+    dialog --title "Edit Flatpak Apps List" --yesno "Would you like to add or remove apps from the flatapps.txt file?" 7 60
+    local edit_choice=$?  # Store the user's decision
+    
+    # If the user chooses to edit, open the file in nano editor
+    if [[ $edit_choice -eq 0 ]]; then
+        nano "$file"
+        clear  # Clear the screen after editing
+    fi
+        
+    clear
+    # Announce the start of app installation
+    echo "Installing Flatpak Apps"
+    # Read each line from the flatapps.txt file and install the app
+    while IFS= read -r line; do
+        if [[ -n "$line" ]]; then  # Check if the line is not empty
+            flatpak install -y flathub "$line"  # Install the app
+            sleep 2  # Pause for 2 seconds after each installation
+        fi
+    done < "$file"
+    sleep 2
+    return 0  # Exit the function successfully
+}
+
