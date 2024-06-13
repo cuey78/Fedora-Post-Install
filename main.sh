@@ -183,12 +183,12 @@ menu() {
         3 "Install RPM Fusion Repositories"
         4 "Install System Drivers"
         5 "Install Media Codecs"
-        6 "Enable Flathub Repository"
+        6 "Configure Flatpak and Manage Applications"
         7 "Install Google Chrome Browser"
         8 "Install Virtualization Tools"
         9 "Setup NFS Shares (WiFi/Wired)"
         10 "Install Additional Extras"
-        Q "Quit Script"
+        Q "Quit"
     )
 
     # Infinite loop for menu display and interaction
@@ -208,7 +208,7 @@ menu() {
             3) install_rpm_fusion ;;
             4) install_drivers ;;
             5) install_media_codecs ;;
-            6) enable_flathub ;;
+            6) flatpak_menu ;;
             7) install_google_chrome ;;
             8) install_virtualization ;;
             9) nfs_setup ;;
