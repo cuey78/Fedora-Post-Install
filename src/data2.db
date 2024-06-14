@@ -53,7 +53,7 @@ install_drivers() {
                 3 "Exit" \
                 3>&1 1>&2 2>&3)
 
-        clear
+
         case $CHOICE in
             1) install_amd_drivers ;;
             2) install_intel_drivers ;;
@@ -158,37 +158,61 @@ flatpak_menu() {
 install_flatpaks() {
     clear
     local USER=$(logname)
-    # Define the path to the flatapps.txt file
     local file="./src/flatapps.txt"
-    
-    # Check if the flatapps.txt file exists
+
     if [[ ! -f "$file" ]]; then
         echo "File $file not found!"
-        sleep 2  # Pause for 2 seconds to let the user read the message
-        return 1  # Exit the function with an error status
+        sleep 2
+        return 1
     fi
 
-    # Prompt the user to edit the flatapps.txt file
     dialog --title "Edit Flatpak Apps List" --yesno "Would you like to add or remove apps from the flatapps.txt file?" 7 60
-    local edit_choice=$?  # Store the user's decision
-    
-    # If the user chooses to edit, open the file in nano editor
+    local edit_choice=$?
+
     if [[ $edit_choice -eq 0 ]]; then
         runuser -u $USER nano "$file"
-        clear  # Clear the screen after editing
+        clear
     fi
-        
+
     clear
-    # Announce the start of oveapp installation
-    echo "Installing Flatpak Apps"
-    # Read each line from the flatapps.txt file and install the app
+
+    # Read the file into an array of options for the radiolist
+    local options=()
+    local i=0
     while IFS= read -r line; do
-        if [[ -n "$line" ]]; then  # Check if the line is not empty
-            runuser -u "$USER" -- flatpak install -y flathub "$line"
-            sleep 2  # Pause for 2 seconds after each installation
+        if [[ -n "$line" ]]; then
+            options+=($i "$line" off)
+            ((i++))
         fi
     done < "$file"
-    sleep 2
-    return 0  # Exit the function successfully
+
+    if [[ ${#options[@]} -eq 0 ]]; then
+        dialog --msgbox "No apps found in $file" 0 0
+        sleep 1
+        return 1
+    fi
+
+    # Use dialog to create a radiolist for the user to select apps
+    local choices=$(dialog --title "Select Flatpak Apps to Install" --checklist "Select apps:" 15 60 5 "${options[@]}" 3>&1 1>&2 2>&3 3>&-)
+
+    if [[ -z "$choices" ]]; then
+        dialog --msgbox "No apps selected." 0 0
+        return 1
+    fi
+
+    clear
+    echo "Installing selected Flatpak Apps"
+
+    # Convert the user's choices into an array of indices
+    local selected_indices=($choices)
+
+    # Install the selected apps
+    for index in "${selected_indices[@]}"; do
+        local app="${options[index*3+1]}"  # Get the app name from options array
+        runuser -u "$USER" -- flatpak install -y flathub "$app"
+    done
+
+    return 0
 }
+
 
