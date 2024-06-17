@@ -141,8 +141,8 @@ FIX_GRUB(){
     } >> "$GRUB_FILE"
 
     # Ensure the theme directory exists and create it if it doesn't
-    echo "Ensuring theme directory exists..."
-    mkdir -p "$THEME_DIR" || { echo "Failed to create theme directory."; return 1; }
+    #echo "Ensuring theme directory exists..."
+    #mkdir -p "$THEME_DIR" || { echo "Failed to create theme directory."; return 1; }
 
     # Copy theme files to the theme directory
     echo "Copying theme files..."
