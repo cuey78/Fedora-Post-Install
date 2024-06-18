@@ -57,9 +57,5 @@ Example 2: 'chmod +x main.sh then sudo ./main.sh'
 
 To install and execute the script in one line:
 
-`bash
+```bash
 curl -sSL https://raw.githubusercontent.com/cuey78/Fedora-Post-Install/main/runme.py | sudo python3 -
-
-
-
-
