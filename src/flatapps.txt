@@ -3,3 +3,4 @@ it.mijorus.gearlever
 com.moonlight_stream.Moonlight
 com.valvesoftware.SteamLink
 org.qbittorrent.qBittorrent
+io.missioncenter.MissionCenter
