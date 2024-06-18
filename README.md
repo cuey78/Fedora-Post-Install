@@ -51,6 +51,7 @@ This script is compatible with:
 To use this script, ensure you are running it with root privileges to allow for system-level modifications. This can typically be achieved by prefixing the command with `sudo`.
 
 Example: `sudo python3 -c "$(curl -sSL https://raw.githubusercontent.com/cuey78/Fedora-Post-Install/main/runme.py)"`
+
 Example 2: 'chmod +x main.sh then sudo ./main.sh'
 
 ### One-line Installation
