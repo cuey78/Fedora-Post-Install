@@ -51,4 +51,7 @@ To use this script, ensure you are running it with root privileges to allow for 
 
 Example: sudo ./main.sh
 
+One line install - curl -sSL https://raw.githubusercontent.com/cuey78/Fedora-Post-Install/main/runme.py | python3 -
+
+
 
