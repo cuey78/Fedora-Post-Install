@@ -47,12 +47,18 @@ This script is compatible with:
 - GNOME desktop environment - Untested on the ToDo List
 
 ## Usage
+
 To use this script, ensure you are running it with root privileges to allow for system-level modifications. This can typically be achieved by prefixing the command with `sudo`.
 
-Example: sudo ./main.sh
+Example: `sudo python3 -c "$(curl -sSL https://raw.githubusercontent.com/cuey78/Fedora-Post-Install/main/runme.py)"`
 
-One line install -
-[Copy link to clipboard](javascript:window.location.href="https://raw.githubusercontent.com/cuey78/Fedora-Post-Install/main/runme.py";)
+### One-line Installation
+
+To install and execute the script in one line:
+
+```bash
+curl -sSL https://raw.githubusercontent.com/cuey78/Fedora-Post-Install/main/runme.py | sudo python3 -
+
 
 
 
