@@ -143,9 +143,17 @@ notify() {
     log_action "$message"
 }
 
+#reset permisions
+cleanup() {
+    local user1="$(logname)"
+    local directory="$(pwd)"  # Current directory
+    chown -R "$user1":"$user1" "$directory"
+}
+
 # Log function
 log_action() {
     banner
+    cleanup
     local message=$1
     echo "$(date '+%Y-%m-%d %H:%M:%S') - $message" | tee -a $LOG_FILE
 }
@@ -219,6 +227,8 @@ menu() {
     done
 }
 
+
+
 # Initialization of the script
 
 # Install required dependencies
@@ -228,7 +238,7 @@ check_and_install_package xdotool
 # Display the initial banner
 banner
 # Pause execution for .5 seconds to allow banner visibility
-sleep .5
+sleep 1
 # Load additional script functions
 source_function_scripts
 # Verify that all necessary functions are correctly imported
@@ -237,3 +247,4 @@ check_functions
 menu
 # Show the closing banner upon script exit
 banner
+
