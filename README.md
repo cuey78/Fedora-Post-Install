@@ -62,5 +62,3 @@ curl -sSL https://raw.githubusercontent.com/cuey78/Fedora-Post-Install/main/runm
 
 
 
-
-
