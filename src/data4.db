@@ -209,7 +209,7 @@ FIX_KDE_SPLASH(){
             #Fixs Fedora KDE Default Splash Screen to Match Fedora Logo
             USER2=$(logname)
             USER_HOME="/home/$USER2/.config"
-            TAR_FILE="./splash/FedoraMinimal.tar.gz"
+            TAR_FILE="./splash/Fedora-Minimalistic.tar.gz"
             SOURCE_DIR="./splash/"
             DEST_DIR="/home/$USER2/.local/share/plasma/look-and-feel/"
 
@@ -249,12 +249,12 @@ FIX_KDE_SPLASH(){
             FILE="$USER_HOME/ksplashrc"
 
             # Write the specified lines to the ksplashrc file
-            echo -e "[KSplash]\nTheme=FedoraMinimal" > "$FILE"
+            echo -e "[KSplash]\nTheme=Fedora-Minimalistic" > "$FILE"
             # set permissions on config
             chown $USER2:$USER2 $FILE
             # Print a success message
             dialog --msgbox "The Fedora KDE splash screen theme has been successfully applied." 0 0 
             
             #clean uo
-            rm /home/$USER2/.local/share/plasma/look-and-feel/FedoraMinimal.tar.gz
+            rm /home/$USER2/.local/share/plasma/look-and-feel/Fedora-Minimalistic.tar.gz
 }
