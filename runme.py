@@ -6,7 +6,7 @@ import sys
 # Function to clone a git repository
 def clone_repo(repo_url, clone_dir):
     if not os.path.exists(clone_dir):
-        subprocess.run(["git", "clone", repo_url, clone_dir])
+        subprocess.run(["git", "clone", "depth=1", repo_url, clone_dir])
     else:
         print(f"Directory {clone_dir} already exists. Pulling latest changes.")
         original_dir = os.getcwd()
