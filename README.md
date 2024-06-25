@@ -49,7 +49,7 @@ This script is compatible with:
 
 To use this script, ensure you are running it with root privileges to allow for system-level modifications. This can typically be achieved by prefixing the command with `sudo`.
 
-Example 1: ```sudo python3 -c "$(curl -sSL https://raw.githubusercontent.com/cuey78/Fedora-Post-Install/main/runme.py)" ```
+Example 1: ```sudo bash -c "$(curl -sSL https://raw.githubusercontent.com/cuey78/Fedora-Post-Install/main/runme.sh)" ```
 
 Example 2: `chmod +x main.sh then sudo ./main.sh`
 
@@ -58,4 +58,4 @@ Example 2: `chmod +x main.sh then sudo ./main.sh`
 To install and execute the script in one line:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/cuey78/Fedora-Post-Install/main/runme.py | sudo python3 -
+curl -sSL https://raw.githubusercontent.com/cuey78/Fedora-Post-Install/main/runme.sh | sudo bash -
