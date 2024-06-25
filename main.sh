@@ -187,15 +187,16 @@ menu() {
     # Menu options array
     local options=(
         1 "Optimize and Update DNF Settings"
-        2 "Check for Firmware Updates"
-        3 "Install RPM Fusion Repositories"
-        4 "Install System Drivers"
-        5 "Install Media Codecs"
-        6 "Configure Flatpak and Manage Applications"
-        7 "Install Google Chrome Browser"
-        8 "Install Virtualization Tools"
-        9 "Setup NFS Shares (WiFi/Wired)"
-        10 "Install Additional Extras"
+        2 "System Update"
+        3 "Check for Firmware Updates"
+        4 "Install RPM Fusion Repositories"
+        5 "Install System Drivers"
+        6 "Install Media Codecs"
+        7 "Configure Flatpak and Manage Applications"
+        8 "Install Google Chrome Browser"
+        9 "Install Virtualization Tools"
+        10 "Setup NFS Shares (WiFi/Wired)"
+        11 "Install Additional Extras"
         Q "Quit"
     )
 
@@ -212,15 +213,16 @@ menu() {
         clear
         case $choice in
             1) fix_and_clean_dnf ;;
-            2) check_firmware_update ;;
-            3) install_rpm_fusion ;;
-            4) install_drivers ;;
-            5) install_media_codecs ;;
-            6) flatpak_menu ;;
-            7) install_google_chrome ;;
-            8) install_virtualization ;;
-            9) nfs_setup ;;
-            10) fedora_theme_fix ;;
+            2) system_update ;;
+            3) check_firmware_update ;;
+            4) install_rpm_fusion ;;
+            5) install_drivers ;;
+            6) install_media_codecs ;;
+            7) flatpak_menu ;;
+            8) install_google_chrome ;;
+            9) install_virtualization ;;
+            10) nfs_setup ;;
+            11) fedora_theme_fix ;;
             Q) log_action "User chose to quit the script."; exit 0 ;;
             *) log_action "Invalid option selected: $choice";;
         esac
