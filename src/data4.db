@@ -111,9 +111,9 @@ FIX_GRUB(){
     # Define the backup file path for the GRUB configuration
     local BACKUP_FILE="${GRUB_FILE}.bak"
     # Define the directory path for the GRUB theme
-    local THEME_DIR="/boot/grub2/theme/fedora"
+    local THEME_DIR="/boot/grub2/theme/fedora/"
     # Define the theme file path
-    local THEME_FILE="${THEME_DIR}/theme.txt"
+    local THEME_FILE="${THEME_DIR}theme.txt"
     # Define the graphics mode setting
     local GFXMODE="1920x1080,auto"
 
@@ -142,7 +142,7 @@ FIX_GRUB(){
 
     # Ensure the theme directory exists and create it if it doesn't
     #echo "Ensuring theme directory exists..."
-    #mkdir -p "$THEME_DIR" || { echo "Failed to create theme directory."; return 1; }
+    mkdir -p "$THEME_DIR" || { echo "Failed to create theme directory."; return 1; }
 
     # Copy theme files to the theme directory
     echo "Copying theme files..."
