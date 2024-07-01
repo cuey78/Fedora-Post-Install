@@ -4,6 +4,12 @@ Clone_Repo() {
   local repo_url="https://github.com/cuey78/fedora-post-install"
   local clone_dir="Fedora-post-install"
 
+  # Check if git is installed
+  if ! command -v git &> /dev/null; then
+    echo "Git not found. Installing git..."
+    sudo dnf install -y git  # Assuming Fedora uses dnf package manager
+  fi
+
   if [ ! -d "$clone_dir" ]; then
     git clone $repo_url $clone_dir
   else
