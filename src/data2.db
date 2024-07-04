@@ -24,6 +24,7 @@
 
 # Installs Mesa Freeworld Drivers 
 install_amd_drivers(){
+    clear
     dnf swap -y mesa-va-drivers mesa-va-drivers-freeworld
     dnf swap -y mesa-vdpau-drivers mesa-vdpau-drivers-freeworld
     dnf install -y libva-utils
@@ -31,6 +32,7 @@ install_amd_drivers(){
 
 # Installs Intel Media Driver
 install_intel_drivers(){
+    clear
     dnf install -y intel-media-driver
     dnf install -y  libva-utils
 }
