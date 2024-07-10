@@ -410,7 +410,11 @@ IOMMU_SETUP(){
     then 
         mv /etc/dracut.conf.d/local.conf local.conf.backup
     fi
+     
+    echo "install vfio-pci /sbin/vfio-pci-override-vga.sh" > /etc/modprobe.d/local.conf
 
+    cp local.conf /etc/dracut.conf.d/local.conf
+    
     cp /etc/default/grub new_grub
     # Detect cpu type
     DETECT_CPU
