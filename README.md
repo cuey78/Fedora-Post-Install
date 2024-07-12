@@ -8,7 +8,7 @@ The Fedora Post Install Script offers a wide range of functionalities to enhance
 
 - **Virtualization Support:**
   - Installs VirtManager and QEMU for managing virtual machines.
-  - Configures PCI passthrough for AMD or Intel hardware.
+  - Configures PCI passthrough for AMD / NVIDIA or Intel hardware.
   - Sets up Intel GVT support for shared virtual GPU.
 
 - **Repository and Software Management:**
