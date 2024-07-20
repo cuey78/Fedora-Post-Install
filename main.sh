@@ -197,6 +197,7 @@ menu() {
         9 "Install Virtualization Tools"
         10 "Setup NFS Shares (WiFi/Wired)"
         11 "Install Additional Extras"
+        12 "Swap Kernel"
         Q "Quit"
     )
 
@@ -223,6 +224,7 @@ menu() {
             9) install_virtualization ;;
             10) nfs_setup ;;
             11) fedora_theme_fix ;;
+            12) kernel_menu ;;
             Q) log_action "User chose to quit the script."; exit 0 ;;
             *) log_action "Invalid option selected: $choice";;
         esac
