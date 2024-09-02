@@ -104,7 +104,7 @@ show_progress() {
 
 # Function to source function scripts from the src directory
 source_function_scripts() {
-    local files_to_source=(./src/*.db)
+    local files_to_source=(./plugins/*.sh)
     local total_files=${#files_to_source[@]}
     local current_file_index=0
 
