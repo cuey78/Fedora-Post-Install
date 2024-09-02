@@ -81,7 +81,7 @@ flatpak_menu() {
 install_flatpaks() {
     clear
     local USER=$(logname)
-    local file="./src/flatapps.txt"
+    local file="./plugins/flatapps.txt"
 
     if [[ ! -f "$file" ]]; then
         echo "File $file not found!"
