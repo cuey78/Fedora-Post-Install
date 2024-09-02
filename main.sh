@@ -50,7 +50,7 @@ Clone_Repo() {
   fi
 
   if [ ! -d "$clone_dir" ]; then
-    git clone $repo_url $clone_dir
+    git clone -b testing $repo_url $clone_dir
   else
     cd $clone_dir
     git pull
