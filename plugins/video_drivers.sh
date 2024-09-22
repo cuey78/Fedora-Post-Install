@@ -22,23 +22,52 @@
 # Installs Mesa Freeworld Drivers 
 install_amd_drivers(){
     clear
-    dnf swap -y mesa-va-drivers mesa-va-drivers-freeworld
-    dnf swap -y mesa-vdpau-drivers mesa-vdpau-drivers-freeworld
-    dnf install -y libva-utils
+    if check_dnf5_installed; then
+        dnf5 swap -y mesa-va-drivers mesa-va-drivers-freeworld
+        dnf5 swap -y mesa-vdpau-drivers mesa-vdpau-drivers-freeworld
+        dnf5 install -y libva-utils
+    else
+        dnf swap -y mesa-va-drivers mesa-va-drivers-freeworld
+        dnf swap -y mesa-vdpau-drivers mesa-vdpau-drivers-freeworld
+        dnf install -y libva-utils
+fi
+
 }
 
 # Installs Intel Media Driver
 install_intel_drivers(){
     clear
-    dnf install -y intel-media-driver
-    dnf install -y  libva-utils
+       # Check if dnf5 is installed and use the appropriate command
+    if check_dnf5_installed; then
+        dnf5 install -y intel-media-driver
+        dnf5 install -y  libva-utils
+    else
+        dnf install -y intel-media-driver
+        dnf install -y  libva-utils
+    fi
+}
+
+# Function to check if dnf5 is installed
+check_dnf5_installed() {
+    if command -v dnf5 &> /dev/null; then
+        return 0  # dnf5 is installed
+    else
+        return 1  # dnf5 is not installed
+    fi
 }
 
 # Main Function to Install Video Drivers
 install_drivers() {
-    # Check if rpmfusion-free and rpmfusion-nonfree repositories are enabled
+   # Check if dnf5 is installed and use the appropriate command
+if check_dnf5_installed; then
+    # dnf5 command to list repositories
+    free_repo=$(dnf5 repo list --all | grep -i 'rpmfusion-free')
+    nonfree_repo=$(dnf5 repo list --all | grep -i 'rpmfusion-nonfree')
+else
+    # Fallback to dnf command to list repositories
     free_repo=$(dnf repolist all | grep -i 'rpmfusion-free')
     nonfree_repo=$(dnf repolist all | grep -i 'rpmfusion-nonfree')
+fi
     
     if [[ -n "$free_repo" && -n "$nonfree_repo" ]]; then
      while true; do
