@@ -102,7 +102,7 @@ system_update(){
     response=$?
     if [[ $response -eq 0 ]]; then
         clear
-        dnf update && dnf upgrade
+        dnf update -y
         messages+=("'System update completed")
     else
         messages+=("Skipped System Update'.")
