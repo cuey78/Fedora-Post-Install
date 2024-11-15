@@ -375,7 +375,9 @@ VIRTMAN(){
     echo "|   Installing Virtualization Software   |"
     echo "=========================================="
     dnf install qemu qemu-img nano -y
-    dnf groupinstall "Virtualization" -y
+    dnf group install "virtualization" -y
+    systemctl enable libvirtd.service
+    systemctl start libvirtd.service
 }
 
 # Run Virtmanager as non root
