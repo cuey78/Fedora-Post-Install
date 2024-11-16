@@ -1,3 +1,28 @@
+#!/bin/bash
+#---------------------------------------------------------------------------------------#
+# Fedora Post-Installation Script for GRUB and Theme Configuration                      #
+# This script provides utilities to configure GRUB settings and apply theme fixes       #
+# for a Fedora system. It includes functions to modify GRUB command lines, update       #
+# GRUB timeout, fix GRUB themes, and manage KDE splash screens.                         #
+#                                                                                       #
+# Functions:                                                                            #
+#   - add_exclude_to_updates_repo: Adds kernel exclusion to the updates repository.     #
+#   - update_kernel: Updates the kernel using the sentry/kernel-fsync COPR repository.  #
+#   - remove_exclude_from_updates_repo: Removes kernel exclusion from updates repo.     #
+#   - remove_copr_repo: Disables and removes the specified COPR repository.             #
+#   - change_kernel: Adds kernel exclusion and updates to Nobara fsync kernel.          #
+#   - stock_kernel: Removes kernel exclusion and COPR repo to return to stock kernel.   #
+#   - kernel_menu: Displays a menu for kernel management options.                       #
+#                                                                                       #
+# Usage:                                                                                #
+#   This script is designed to be run as a plugin module as part of the Fedora          #
+#   Post-Installation Script. It does not need to be executed separately.               #
+# Prerequisites:                                                                        #
+#   - The script assumes a Fedora system with GRUB and KDE installed.                   #
+#   - Dialog and sed utilities are required.                                            #
+#---------------------------------------------------------------------------------------#
+
+# Function to add kernel exclusion to the updates repository
 add_exclude_to_updates_repo() {
     local repo_file="/etc/yum.repos.d/fedora-updates.repo"
     local backup_file="${repo_file}.bak"
@@ -20,6 +45,7 @@ add_exclude_to_updates_repo() {
     echo "Updated $repo_file with exclude=kernel* in the [updates] section."
 }
 
+# Function to update the kernel using the sentry/kernel-fsync COPR repository
 update_kernel() {
     echo "Enabling the sentry/kernel-fsync COPR repository..."
     sudo dnf copr enable sentry/kernel-fsync -y
@@ -28,6 +54,7 @@ update_kernel() {
     sudo dnf update --refresh -y
 }
 
+# Function to remove kernel exclusion from the updates repository
 remove_exclude_from_updates_repo() {
     local repo_file="/etc/yum.repos.d/fedora-updates.repo"
     local backup_file="${repo_file}.bak"
@@ -48,6 +75,7 @@ remove_exclude_from_updates_repo() {
     echo "Removed $exclude_line from the [updates] section in $repo_file."
 }
 
+# Function to remove the sentry/kernel-fsync COPR repository
 remove_copr_repo() {
     local repo_name="sentry/kernel-fsync"
 
@@ -56,18 +84,21 @@ remove_copr_repo() {
     echo "Removed the COPR repository: $repo_name."
 }
 
+# Function to change to the Nobara fsync kernel
 change_kernel() {
     clear
     add_exclude_to_updates_repo
     update_kernel
 }
 
+# Function to return to the stock Fedora kernel
 stock_kernel() {
     clear
     remove_exclude_from_updates_repo
     remove_copr_repo
 }
 
+# Function to display the kernel management menu
 kernel_menu(){
 # Show the dialog menu
 while true; do

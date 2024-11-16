@@ -14,9 +14,8 @@
 #   - nfs_setup: Provides a menu to choose between Wi-Fi or wired NFS setup.       #
 #                                                                                  #
 # Usage:                                                                           #
-#   Run the script with root privileges to ensure it can perform system-level      #
-#   modifications. For example, use 'sudo ./main.sh'.                              #
-#                                                                                  #
+#   This script is designed to be run as a plugin module as part of the Fedora     #
+#   Post-Installation Script. It does not need to be executed separately.          #
 # Prerequisites:                                                                   #
 #   - The script assumes a Fedora system with network manager and systemd.         #
 #   - Internet connection is required for downloading fonts and updating NFS.      #

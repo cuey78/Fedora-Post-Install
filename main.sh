@@ -38,6 +38,7 @@
 #  Reset color                                                                          #
 #  RESET="\033[0m"                                                                      #
 #########################################################################################
+
 # Shows Banner on load
 banner(){
     local color1="\033[0;37m" # Red color
@@ -104,7 +105,7 @@ show_progress() {
 
 # Function to source function scripts from the src directory
 source_function_scripts() {
-    local files_to_source=(./src/*.db)
+    local files_to_source=(./plugins/*.sh)
     local total_files=${#files_to_source[@]}
     local current_file_index=0
 
@@ -241,6 +242,7 @@ check_and_install_package xdotool
 
 # Display the initial banner
 banner
+
 # Pause execution for .5 seconds to allow banner visibility
 sleep 1
 # Load additional script functions
