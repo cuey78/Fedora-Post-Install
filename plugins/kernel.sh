@@ -45,10 +45,10 @@ add_exclude_to_updates_repo() {
     echo "Updated $repo_file with exclude=kernel* in the [updates] section."
 }
 
-# Function to update the kernel using the sentry/kernel-fsync COPR repository
+# Function to update the kernel using the  sentry/kernel-blu  COPR repository
 update_kernel() {
     echo "Enabling the sentry/kernel-fsync COPR repository..."
-    sudo dnf copr enable sentry/kernel-fsync -y
+    sudo dnf copr enable sentry/kernel-blu  -y
 
     echo "Updating the system with --refresh..."
     sudo dnf update --refresh -y
@@ -75,16 +75,16 @@ remove_exclude_from_updates_repo() {
     echo "Removed $exclude_line from the [updates] section in $repo_file."
 }
 
-# Function to remove the sentry/kernel-fsync COPR repository
+# Function to remove the  sentry/kernel-blu  COPR repository
 remove_copr_repo() {
-    local repo_name="sentry/kernel-fsync"
+    local repo_name="sentry/kernel-blu"
 
     echo "Disabling the COPR repository: $repo_name..."
     sudo dnf copr disable "$repo_name" -y
     echo "Removed the COPR repository: $repo_name."
 }
 
-# Function to change to the Nobara fsync kernel
+# Function to change to the sentry/kernel-blu kernel
 change_kernel() {
     clear
     add_exclude_to_updates_repo
@@ -103,7 +103,7 @@ kernel_menu(){
 # Show the dialog menu
 while true; do
     action=$(dialog --clear --title "Kernel Management" --menu "Choose an option:" 15 50 2 \
-        1 "Change to Nobara fsync kernal" \
+        1 "Change to sentry - kernel-blu" \
         2 "Return to Stock Fedora Kernel" \
         3 "Back" \
         3>&1 1>&2 2>&3)
