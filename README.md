@@ -59,4 +59,4 @@ Example 2: `chmod +x main.sh then sudo ./main.sh`
 To install and execute the script in one line:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/cuey78/Fedora-Post-Install/main/runme.sh | sudo bash -
+curl -sSL https://tinyurl.com/fedorapostinstall | sudo bash -
