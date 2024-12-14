@@ -199,6 +199,7 @@ menu() {
         10 "Setup NFS Shares (WiFi/Wired)"
         11 "Install Additional Extras"
         12 "Swap Kernel"
+        13 "Install additional Apps/Utils"
         Q "Quit"
     )
 
@@ -226,6 +227,7 @@ menu() {
             10) nfs_setup ;;
             11) fedora_theme_fix ;;
             12) kernel_menu ;;
+            13) app_install ;;
             Q) log_action "User chose to quit the script."; exit 0 ;;
             *) log_action "Invalid option selected: $choice";;
         esac
