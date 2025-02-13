@@ -1,7 +1,7 @@
 # Fedora Post Install Script
 
 ## Overview
-This script is designed to automate the configuration and installation of various system components and software on Fedora systems. It has been tested on Fedora 40 with KDE but should work seamlessly on Fedora 39 as well.
+This script is designed to automate the configuration and installation of various system components and software on Fedora systems. It has been tested on Fedora 41 with KDE but should work seamlessly on Fedora 40 as well.
 
 ## Features
 The Fedora Post Install Script offers a wide range of functionalities to enhance the Fedora system setup:
