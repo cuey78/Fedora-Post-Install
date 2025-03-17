@@ -88,11 +88,11 @@ download() {
 install_looking_glass_client() {
             # Initialize local variables for version selection and file handling
             local version=""
-            local stable="looking-glass-B6.tar.gz"
+            local stable="looking-glass-B7.tar.gz"
             local rc1="looking-glass-B7-rc1.tar.gz"
             local url="https://looking-glass.io/artifact/stable/source/"
             local url2="https://looking-glass.io/artifact/rc/source/"
-            local filestable="looking-glass-B6"
+            local filestable="looking-glass-B7"
             local filerc1="looking-glass-B7-rc1"
             local filename=""
 
