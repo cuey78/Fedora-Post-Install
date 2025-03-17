@@ -141,9 +141,11 @@ install_hooks() {
     chmod +x /etc/libvirt/hooks/qemu
 }
 
-#Main Body of script
-configure_hugepages
-hook_config
-update_qemu_file
-install_hooks
+auto_huge(){
+    #Main Body of script
+    configure_hugepages
+    hook_config
+    update_qemu_file
+    install_hooks
+}
 
