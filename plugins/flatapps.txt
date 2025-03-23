@@ -7,3 +7,4 @@ io.missioncenter.MissionCenter
 com.parsecgaming.parsec
 org.videolan.VLC
 org.ryujinx.Ryujinx
+com.mattjakeman.ExtensionManager

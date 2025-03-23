@@ -20,6 +20,46 @@
 #   - Ensure sudo privileges for software installation and system configuration.      #
 #-------------------------------------------------------------------------------------#
 
+heroic(){
+# GitHub releases URL
+RELEASES_URL="https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher/releases/"
+
+# Fetch the latest release page
+echo "Fetching latest release information from GitHub..."
+RELEASE_PAGE=$(curl -s "$RELEASES_URL")
+
+# Extract the RPM file URL
+RPM_URL=$(echo "$RELEASE_PAGE" | grep -oP 'href="\K[^"]+\.rpm(?=")' | head -n 1)
+
+# Check if RPM URL was found
+if [ -z "$RPM_URL" ]; then
+    echo "Error: No RPM file found in the latest release."
+    exit 1
+fi
+
+# Construct the full download URL
+DOWNLOAD_URL="https://github.com$RPM_URL"
+
+# Extract the RPM file name
+RPM_FILE=$(basename "$RPM_URL")
+
+# Download the RPM file
+echo "Downloading $RPM_FILE..."
+curl -LO "$DOWNLOAD_URL"
+
+# Verify the download
+if [ $? -eq 0 ]; then
+    echo "Download complete: $RPM_FILE"
+else
+    echo "Error: Failed to download the RPM file."
+    exit 1
+fi
+#Install heroic game launcher
+dnf install $RPM_FILE -y
+#remove file after install
+rm -f $RPM_FILE
+}
+
 # Function to display a menu using dialog
 display_menu() {
   dialog --clear \
@@ -27,10 +67,11 @@ display_menu() {
     --title "Application Installation Menu" \
     --menu "Select an application to install:" 0 0 0 \
     1 "Cooler Control and LACT - Install tools to control CPU coolers and monitor temperature." \
-    2 "Gaming Utilities - Install Steam, Lutris, Gamescope, and other gaming-related tools." \
-    3 "Development Tools - Install wget, git, pciutils, and related utilities for development." \
-    4 "GNOME Software - Install GNOME Software for managing applications on your system." \
-    5 "Back" 2>menu_selection
+    2 "Gaming Packages - Install Steam, Lutris, Gamescope, Winetricks , Heroic and other gaming-related tools." \
+    3 "Development Tools - Related utilities for development." \
+    4 "Tweaks for the Gnome Desktop" \
+    5 "Tweaks for the KDE Desktop" \
+    b "Back" 2>menu_selection
 
   choice=$(<menu_selection)
   rm -f menu_selection
@@ -48,35 +89,38 @@ install_cooler_lact() {
   systemctl enable --now lactd
 }
 
+winetrick_install(){
+ if command -v make &> /dev/null; then
+    echo "make is installed."
+    echo "installing Winetricks"
+else
+    echo "make is not installed."
+    echo "installing dev tools"
+    install_dev_tools
+fi
+ git clone https://github.com/Winetricks/winetricks
+  cd winetricks || exit
+  make install
+  cd ..
+  rm -rf winetricks
+}
+
 # Function to install gaming utilities
 install_gaming_utils() {
   clear
   echo "Installing Gaming Utilities..."
   dnf install steam lutris gamescope mangohud -y
-
-  git clone https://github.com/Winetricks/winetricks
-  cd winetricks || exit
-  make install
-  cd ..
-  rm -rf winetricks
-
-  wget https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher/releases/download/v2.15.2/heroic-2.15.2.x86_64.rpm
-  dnf install heroic-2.15.2.x86_64.rpm -y
-  rm -f heroic-2.15.2.x86_64.rpm
-}
-
-# Function to install GNOME Software
-install_gnome_software() {
-  clear
-  echo "Installing GNOME Software..."
-  dnf install gnome-software -y
+  #install Heroic Game Luncher
+  heroic
+  #install newest winetricks from git
+  winetrick_install
 }
 
 # Function to install development tools
 install_dev_tools() {
   clear
   echo "Installing Development Tools..."
-  dnf install wget2 wget git pciutils -y
+  sudo dnf group install c-development development-tools 
 }
 
 # Function for the main script loop
@@ -96,9 +140,12 @@ app_install() {
         install_dev_tools
         ;;
       4)
-        install_gnome_software
+        tweaks_gnome
         ;;
       5)
+        kde_tweaks
+      ;;
+      b)
         return # Exit the function to go back to the main menu
         ;;
       *)
