@@ -99,8 +99,8 @@ show_progress() {
     local current_file_index=$2
     local percentage=$((current_file_index * 100 / total_files))
 
-    echo $percentage | dialog --gauge "Importing function scripts..." 10 70
-    sleep .1
+    # Update the progress bar without unnecessary delays
+    echo "$percentage" | dialog --gauge "Importing function scripts..." 10 70 0
 }
 
 # Function to source function scripts from the src directory
@@ -109,6 +109,7 @@ source_function_scripts() {
     local total_files=${#files_to_source[@]}
     local current_file_index=0
 
+    # Loop through and source each file
     for file in "${files_to_source[@]}"; do
         if [ -e "$file" ]; then
             source "$file"
@@ -187,19 +188,18 @@ declare -r MENU="Please Choose one of the following options:"
 menu() {
     # Menu options array
     local options=(
-        1 "Optimize and Update DNF Settings"
-        2 "System Update"
-        3 "Check for Firmware Updates"
-        4 "Install RPM Fusion Repositories"
-        5 "Install System Drivers"
-        6 "Install Media Codecs"
-        7 "Configure Flatpak and Manage Applications"
-        8 "Install Google Chrome Browser"
-        9 "Install Virtualization Tools"
-        10 "Setup NFS Shares (WiFi/Wired)"
-        11 "Install Additional Extras"
-        12 "Swap Kernel"
-        13 "Install additional Apps/Utils"
+        1 "System Optimization and Maintenance"
+        2 "System Update and Upgrade"
+        3 "Firmware Update Check"
+        4 "Repository Management (RPM Fusion)"
+        5 "Driver Installation and Configuration"
+        6 "Multimedia Codecs Installation"
+        7 "Flatpak Setup and Application Management"
+        8 "Virtualization Tools Setup"
+        9 "Network File System (NFS) Configuration"
+        10 "Additional Software and Utilities"
+        11 "Kernel Management and Swapping"
+        12 "Extra Applications and Tools"
         Q "Quit"
     )
 
@@ -215,19 +215,18 @@ menu() {
 
         clear
         case $choice in
-            1) fix_and_clean_dnf ;;
-            2) system_update ;;
-            3) check_firmware_update ;;
-            4) install_rpm_fusion ;;
-            5) install_drivers ;;
-            6) install_media_codecs ;;
-            7) flatpak_menu ;;
-            8) install_google_chrome ;;
-            9) install_virtualization ;;
-            10) nfs_setup ;;
-            11) fedora_theme_fix ;;
-            12) kernel_menu ;;
-            13) app_install ;;
+            1) fix_and_clean_dnf ;;                # System Optimization and Maintenance
+            2) system_update ;;                    # System Update and Upgrade
+            3) check_firmware_update ;;           # Firmware Update Check
+            4) install_rpm_fusion ;;              # Repository Management (RPM Fusion)
+            5) install_drivers ;;                 # Driver Installation and Configuration
+            6) install_media_codecs ;;             # Multimedia Codecs Installation
+            7) flatpak_menu ;;                    # Flatpak Setup and Application Management
+            8) install_virtualization ;;           # Virtualization Tools Setup
+            9) nfs_setup ;;                        # Network File System (NFS) Configuration
+            10) fedora_theme_fix ;;                # Additional Software and Utilities
+            11) kernel_menu ;;                     # Kernel Management and Swapping
+            12) app_install ;;                    # Extra Applications and Tools
             Q) log_action "User chose to quit the script."; exit 0 ;;
             *) log_action "Invalid option selected: $choice";;
         esac
