@@ -48,7 +48,7 @@ install_virtualization() {
         case $CHOICE in
             1) VIRTMAN ;;
             2) IOMMU_SETUP ;;
-            3) install_looking_glass_client ;;
+            3) looking-glass-install ;;
             4) enable_intel_gvt_service ;;
             5) virtman_noroot ;;
             6) evdev ;;
