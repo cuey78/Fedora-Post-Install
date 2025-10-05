@@ -1,3 +1,4 @@
+<img width="1024" height="1024" alt="4744bc43-1af7-4362-b22f-bba7a52be36d" src="https://github.com/user-attachments/assets/99f19549-4400-4c81-aa54-5bdebdcdb339" />
 # Fedora Post Install Script
 
 ## Overview
