@@ -1,5 +1,6 @@
 <img width="1024" height="1024" alt="4744bc43-1af7-4362-b22f-bba7a52be36d" src="https://github.com/user-attachments/assets/99f19549-4400-4c81-aa54-5bdebdcdb339" />
-This Repo is now arhived please use FPIS
+This Repo is now archived please use FPIS
+
 ## Overview
 This script is designed to automate the configuration and installation of various system components and software on Fedora systems. It has been tested on Fedora 41 with KDE but should work seamlessly on Fedora 40 as well.
 
